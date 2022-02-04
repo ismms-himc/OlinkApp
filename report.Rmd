@@ -1,0 +1,187 @@
+---
+title: "Olink Assay Plots"
+output: html_document
+
+params:
+  rp_upload_data: NA
+  rp_bridging_str: NA
+  rp_combined_data: NA
+  rp_combined_meta: NA
+---
+
+```{r eval = FALSE, echo = FALSE}
+# For PDF output, change the header to have "output: pdf_document".
+#
+# Note that due to an issue in rmarkdown, the default value of a parameter in
+# the header cannot be `NULL`, so I used a default of `NA` for the default value
+# of `n`.
+library(dplyr)
+library(DT)
+```
+
+
+## Summary of plate level information.
+
+
+```{r, echo=F, message=F, warning=F}
+DT::datatable(
+      data.frame(software_version = sapply(params$rp_upload_data, function(x) x@metadata$software_version) %>% unlist(),
+                 filename = sapply(params$rp_upload_data, function(x) x$file_name[1]) %>% unlist(),
+                 panel = sapply(params$rp_upload_data, function(x) x@metadata$panel)%>% unlist(),
+                 total_samples = sapply(params$rp_upload_data, function(x) ncol(x)) %>% unlist(),
+                 total_analyte = sapply(params$rp_upload_data, function(x) nrow(x)) %>% unlist()),
+      rownames = NULL,
+      options = list(scrollX = TRUE))
+```
+ 
+### Reference sample identifier: `r paste(strsplit(params$rp_bridging_str, split = ","), collapse = ",")`
+
+```{r, echo=F, message=F, warning=F}
+# needs sample_id, Plate.ID, in metafile and "lot" only appear once in column names
+
+lapply(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), function(x){
+      bdg_ls <- pull_bdg(params$rp_upload_data, pattern = x)
+      data.frame(filename = names(bdg_ls),
+                 identifier = x,
+                 total_samples = sapply(bdg_ls, function(x) ncol(x)) %>% unlist(),
+                 total_analyte = sapply(bdg_ls, function(x) paste(x$Assay, collapse = ",")) %>% unlist())
+    })%>%
+      do.call(what = "rbind")%>%
+      DT::datatable(rownames = NULL,
+      options = list(scrollX = TRUE))
+
+```
+
+### Reference trace plot
+
+```{r, echo=F, out.width= "100%", message=F, warning=F}
+# needs sample_id, Plate.ID, in metafile and "lot" only appear once in column names
+
+if(sum(grepl("lot", ignore.case = T, colnames(params$rp_combined_meta))) > 0){
+  df <- lapply(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), function(x){
+    data.frame(Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"),
+               sample_id = params$rp_combined_meta$sample_id,
+               Lot = params$rp_combined_meta[ ,grep("lot", ignore.case = T, colnames(params$rp_combined_meta))],
+               t(params$rp_combined_data@assays@data$npx))%>%
+      filter(grepl(x, sample_id, ignore.case = T))%>%
+      mutate(Sample = x)
+  })%>%
+  do.call(what = "rbind")
+  
+  # tracking plot
+  if(length(unique(df$Plate.ID)) > 1){
+    print(df%>%
+    select(-sample_id)%>%
+    gather(-Plate.ID, -Lot, -Sample, key = "analyte", value = "NPX")%>%
+    ggplot(aes(Plate.ID, NPX))+
+    geom_line(aes(group = analyte, color = Lot))+
+    facet_wrap(~Sample)+ 
+    labs(subtitle = "each line indicate a analyte")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5),
+          legend.position="bottom", legend.box="vertical", legend.margin=margin()))
+  }
+  
+}else{
+  df <- lapply(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), function(x){
+    data.frame(Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"),
+               sample_id = params$rp_combined_meta$sample_id,
+               t(params$rp_combined_data@assays@data$npx))%>%
+      filter(grepl(x, sample_id, ignore.case = T))%>%
+      mutate(Sample = x)
+  })%>%
+  do.call(what = "rbind")
+  
+  
+  # tracking plot
+  if(length(unique(df$Plate.ID)) > 1){
+    print(df%>%
+    select(-sample_id)%>%
+    gather(-Plate.ID, -Sample, key = "analyte", value = "NPX")%>%
+    ggplot(aes(Plate.ID, NPX))+
+    geom_line(aes(group = analyte))+
+    facet_wrap(~Sample)+ 
+    labs(subtitle = "each line indicate a analyte")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5),
+          legend.position="bottom", legend.box="vertical", legend.margin=margin()))
+  }
+}
+
+```
+
+### PCA
+
+```{r, echo=F, out.width= "100%", message=F, warning=F}
+mat <- impute::impute.knn(t(params$rp_combined_data@assays@data$npx))$data
+
+fit <- prcomp(mat)
+idf <- paste(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), collapse = "|")
+idf <- paste0("(", idf, ")")
+
+data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
+           pc_2 = fit$x[ ,2],#fit$layout[ ,2],
+           sample_id = params$rp_combined_meta$sample_id,
+           type = ifelse(grepl(idf, ignore.case = T, params$rp_combined_meta$sample_id), "Ref", "Study_Sample"),
+           Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"))%>%
+        filter(!grepl("^(NC|IPC|Randox)", ignore.case = T, sample_id))%>%
+  ggplot()+
+  geom_point(aes(pc_1, pc_2, color = Plate.ID, shape = type))+
+  facet_wrap(~type)+
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())
+```
+
+### Detailed Reference Trace Plots
+
+**Yellow dots indicate LOD**       
+
+
+```{r, echo=F, out.width= "100%", message=F, warning=F}
+if(length(unique(params$rp_combined_meta$Plate.ID)) > 1){
+ 
+  bridge.cmb <- data.frame(
+             Plate.ID = params$rp_combined_meta$Plate.ID[grepl(idf, ignore.case = T, params$rp_combined_meta$sample_id)],
+             t(params$rp_combined_data@assays@data$npx[ ,grepl(idf, ignore.case = T, params$rp_combined_meta$sample_id)]))%>%
+    mutate(Plate.ID = trim_string_bycommon(Plate.ID, split = "_"))
+  
+  lod <- params$rp_combined_data@elementMetadata$LOD
+  names(lod) <- make.names(rownames(params$rp_combined_data))
+  
+  plot.ls <- lapply(names(lod), function(x){
+    
+    ylims <- c(min(bridge.cmb[ ,x], na.rm = T) - 2, max(bridge.cmb[ ,x], na.rm = T)+2)
+    
+    bridge.cmb%>%
+      dplyr::select(Plate.ID, x)%>%
+      ggplot(aes(Plate.ID, get(x)))+
+      geom_point()+
+      theme_bw()+
+      ylim(ylims)+
+      geom_hline(yintercept = lod[names(lod) == x], linetype = 2)+ # too slow
+      labs(y = "NPX", title = x, x = "")+
+      theme_bw(base_size = 8)+
+      theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5))
+  })
+  
+  per_panel <- 6
+  n_panel <- ceiling(length(plot.ls)/per_panel)
+  design <- "
+  ABC
+  DEF
+  "
+  for (i in 1 : n_panel) {
+    ls <- plot.ls[(1 + (i-1) * per_panel) : min(length(plot.ls), (per_panel + (i-1) * per_panel))]
+    design_name <- c("A", "B", "C", "D", "E", "F")
+    names(ls) <- design_name[1 : length(ls)]
+    print(
+      wrap_plots(ls,
+                 design = design, #ncol = 3, nrow = 2, byrow = T, 
+                 guides = "collect") & theme(legend.position = 'bottom')
+    )
+   }
+}else{
+  print("not applicable for single plate.\n")
+}
+```
+

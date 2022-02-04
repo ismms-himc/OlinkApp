@@ -1,0 +1,125 @@
+---
+title: "Olink Scatter Plots"
+output: html_document
+
+params:
+  rp_upload_data: NA
+  rp_bridging_str: NA
+  rp_combined_data: NA
+  rp_combined_meta: NA
+  rp_choice_a1: NA #x var
+  rp_choice_a2: NA # color 
+---
+
+```{r eval = FALSE, echo = FALSE}
+# For PDF output, change the header to have "output: pdf_document".
+#
+# Note that due to an issue in rmarkdown, the default value of a parameter in
+# the header cannot be `NULL`, so I used a default of `NA` for the default value
+# of `n`.
+library(dplyr)
+library(DT)
+```
+
+
+## Summary of plate level information.
+
+
+```{r, echo=F, message=F, warning=F}
+DT::datatable(
+      data.frame(software_version = sapply(params$rp_upload_data, function(x) x@metadata$software_version) %>% unlist(),
+                 filename = sapply(params$rp_upload_data, function(x) x$file_name[1]) %>% unlist(),
+                 panel = sapply(params$rp_upload_data, function(x) x@metadata$panel)%>% unlist(),
+                 total_samples = sapply(params$rp_upload_data, function(x) ncol(x)) %>% unlist(),
+                 total_analyte = sapply(params$rp_upload_data, function(x) nrow(x)) %>% unlist()),
+      rownames = NULL,
+      options = list(scrollX = TRUE))
+```
+ 
+### Reference sample identifier: `r paste(strsplit(params$rp_bridging_str, split = ","), collapse = ",")`
+
+```{r, echo=F, message=F, warning=F}
+# needs sample_id, Plate.ID, in metafile and "lot" only appear once in column names
+
+lapply(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), function(x){
+      bdg_ls <- pull_bdg(params$rp_upload_data, pattern = x)
+      data.frame(filename = names(bdg_ls),
+                 identifier = x,
+                 total_samples = sapply(bdg_ls, function(x) ncol(x)) %>% unlist(),
+                 total_analyte = sapply(bdg_ls, function(x) paste(x$Assay, collapse = ",")) %>% unlist())
+    })%>%
+      do.call(what = "rbind")%>%
+      DT::datatable(rownames = NULL,
+      options = list(scrollX = TRUE))
+
+```
+
+### Plots
+
+**Yellow dots indicate LOD**    
+
+
+```{r, echo=F, message=F, warning=F, out.width= "100%"}
+lod_df <- data.frame(params$rp_combined_data@elementMetadata@listData)
+
+if(sum(grep("(LOD_)", colnames(lod_df))) == 0){
+      lod_df <- cbind.data.frame(Analyt = lod_df[, 1],
+                      LOD = lod_df[ ,grep("(LOD)", colnames(lod_df))]%>%as.numeric())
+    }else{
+      lod_df <- cbind.data.frame(Analyt = lod_df[, 1], 
+                      lapply(grep("(LOD_)", colnames(lod_df)), function(x){
+                        lod_df[ ,x]%>%as.numeric()
+                      })%>% do.call(what = "cbind")%>%
+                        data.frame()%>%
+                        set_colnames(value = colnames(lod_df)[grep("(LOD_)", colnames(lod_df))]))%>%
+        gather(-Analyt, key = "Plate.ID", value = "LOD")%>%
+        mutate(Plate.ID = gsub("LOD_", "", Plate.ID))
+    }
+
+plot.ls <- lapply(rownames(params$rp_combined_data), function(x){
+  p <- data.frame(params$rp_combined_meta,
+             NPX = params$rp_combined_data@assays@data$npx[rownames(params$rp_combined_data) == x , ]
+             )%>%
+    left_join(
+      data.frame(Plate.ID = unique(params$rp_combined_meta$Plate.ID))%>%
+          merge.data.frame(lod_df)%>%
+          filter(Analyt == x)%>%
+          dplyr::select(-Analyt),
+          by = "Plate.ID"
+    )%>%
+    mutate(Plate.ID = trim_string_bycommon(Plate.ID, split = "_"),
+           Plate.ID = substr(Plate.ID, start = 1, stop = 10))%>%
+    filter(!grepl("^(NC|IPC)", sample_id))%>%
+  ggplot()+
+  #geom_boxplot(aes_string(params$rp_choice_a1, "NPX",fill = params$rp_choice_a2), 
+  #            alpha = 0.7)+
+  geom_point(position = position_jitterdodge(jitter.width = 0.1), shape = 21, 
+             aes_string(params$rp_choice_a1, "NPX", color = params$rp_choice_a2))+
+  geom_point(data = .%>%
+               dplyr::select(LOD, params$rp_choice_a1)%>%
+               distinct()%>%
+               data.frame(),
+             aes_string(params$rp_choice_a1, "LOD"), 
+             shape = 13, color = "yellow")+
+  labs(title = x)+
+  theme_bw(base_size = 8)
+  if(length(unique(params$rp_combined_meta[ ,params$rp_choice_a2])) > 15){
+    p+theme(axis.text.x = element_text(angle = 90, hjust = 1),
+            legend.position="none")
+  }else{
+    p+theme(axis.text.x = element_text(angle = 90, hjust = 1),
+            legend.position="bottom", legend.box="vertical", legend.margin=margin())
+  }
+})
+
+per_panel <- 6
+n_panel <- ceiling(length(plot.ls)/per_panel)
+
+for (i in 1 : n_panel) {
+  print(
+    wrap_plots(plot.ls[(1 + (i-1) * per_panel) : min(length(plot.ls), (per_panel + (i-1) * per_panel))],
+               ncol = 3, nrow = 2, byrow = T, guides = "collect")& theme(legend.position = 'bottom')
+  )
+}
+```
+

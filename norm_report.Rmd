@@ -1,0 +1,107 @@
+---
+title: "Olink Reference Normalization"
+output: html_document
+
+params:
+  rp_upload_data: NA
+  rp_bridging_str: NA
+  rp_combined_data: NA
+  rp_combined_meta: NA
+---
+
+```{r eval = FALSE, echo = FALSE}
+# For PDF output, change the header to have "output: pdf_document".
+#
+# Note that due to an issue in rmarkdown, the default value of a parameter in
+# the header cannot be `NULL`, so I used a default of `NA` for the default value
+# of `n`.
+library(dplyr)
+library(DT)
+```
+
+
+## Summary of plate level information.
+
+
+```{r, echo=F, message=F, warning=F}
+DT::datatable(
+      data.frame(software_version = sapply(params$rp_upload_data, function(x) x@metadata$software_version) %>% unlist(),
+                 filename = sapply(params$rp_upload_data, function(x) x$file_name[1]) %>% unlist(),
+                 panel = sapply(params$rp_upload_data, function(x) x@metadata$panel)%>% unlist(),
+                 total_samples = sapply(params$rp_upload_data, function(x) ncol(x)) %>% unlist(),
+                 total_analyte = sapply(params$rp_upload_data, function(x) nrow(x)) %>% unlist()),
+      rownames = NULL,
+      options = list(scrollX = TRUE))
+```
+ 
+### Reference sample identifier: `r paste(strsplit(params$rp_bridging_str, split = ","), collapse = ",")`
+
+```{r, echo=F, message=F, warning=F}
+# needs sample_id, Plate.ID, in metafile and "lot" only appear once in column names
+
+lapply(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), function(x){
+      bdg_ls <- pull_bdg(params$rp_upload_data, pattern = x)
+      data.frame(filename = names(bdg_ls),
+                 identifier = x,
+                 total_samples = sapply(bdg_ls, function(x) ncol(x)) %>% unlist(),
+                 total_analyte = sapply(bdg_ls, function(x) paste(x$Assay, collapse = ",")) %>% unlist())
+    })%>%
+      do.call(what = "rbind")%>%
+      DT::datatable(rownames = NULL,
+      options = list(scrollX = TRUE))
+
+```
+
+### PCA Before Normalization 
+
+```{r, echo=F, out.width= "100%", message=F, warning=F}
+mat <- impute::impute.knn(t(params$rp_combined_data@assays@data$npx))$data
+
+fit <- prcomp(mat)
+idf <- paste(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), collapse = "|")
+idf <- paste0("(", idf, ")")
+
+data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
+           pc_2 = fit$x[ ,2],#fit$layout[ ,2],
+           sample_id = params$rp_combined_meta$sample_id,
+           type = ifelse(grepl(idf, ignore.case = T, params$rp_combined_meta$sample_id), "Ref", "Study_Sample"),
+           Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"))%>%
+        filter(!grepl("^(NC|IPC)", sample_id))%>%
+  ggplot()+
+  geom_point(aes(pc_1, pc_2, color = Plate.ID, shape = type))+
+  facet_wrap(~type)+
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())
+```
+
+### PCA After Normalization 
+
+```{r, echo=F, out.width= "100%", message=F, warning=F}
+mat <- impute::impute.knn(t(params$rp_combined_data@assays@data$normed))$data
+
+fit <- prcomp(mat)
+idf <- paste(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), collapse = "|")
+idf <- paste0("(", idf, ")")
+
+data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
+           pc_2 = fit$x[ ,2],#fit$layout[ ,2],
+           sample_id = params$rp_combined_meta$sample_id,
+           type = ifelse(grepl(idf, ignore.case = T, params$rp_combined_meta$sample_id), "Ref", "Study_Sample"),
+           Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"))%>%
+        filter(!grepl("^(NC|IPC)", sample_id))%>%
+  ggplot()+
+  geom_point(aes(pc_1, pc_2, color = Plate.ID, shape = type))+
+  facet_wrap(~type)+
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())
+```
+
+### Reference Sample QC Plot
+
+**Black dots indicate LOD**       
+
+```{r, echo=F, out.width= "100%", message=F, warning=F, fig.height = 15}
+ref_sample <- strsplit(params$rp_bridging_str, split = ",")%>%unlist()
+plot_npx_norm_qc(params$rp_combined_data, bridge_pattern = ref_sample[1])$all
+```
+
