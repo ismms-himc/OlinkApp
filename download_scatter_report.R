@@ -3,7 +3,7 @@ download_scatter_report_UI <- function(id) {
   
   ns <- NS(id)
   
-  downloadButton(ns("download_scatter_report"), "Download Scatter Plots")
+  downloadButton(ns("download_scatter_report"), "Batch Download Scatter Plots (All analytes)")
 }
 
 

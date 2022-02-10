@@ -23,19 +23,21 @@ input_file_upload <- function(input, output, session, values) {
     
     if(input$data_type == "NPX"){
       for(x in input$raw_file$name){
-        temp_ls[[x]] <- read_npx(input$raw_file$datapath[input$raw_file$name == x], startrow = 8)
+        temp_ls[[x]] <- shinyCatch(read_npx(input$raw_file$datapath[input$raw_file$name == x], startrow = 8), 
+                                   blocking_level = "error")
         temp_ls[[x]][["file_name"]] <- x
         colnames(temp_ls[[x]]) <- temp_ls[[x]]$Assay
       }
     } else{
       for(x in input$raw_file$name){
-        temp_ls[[x]] <- read_npx(input$raw_file$datapath[input$raw_file$name == x], startrow = 9)
+        temp_ls[[x]] <- shinyCatch(read_npx(input$raw_file$datapath[input$raw_file$name == x], startrow = 9),
+                                   blocking_level = "error")
         temp_ls[[x]][["file_name"]] <- x
         colnames(temp_ls[[x]]) <- temp_ls[[x]]$Assay
       }
     }
-    values$upload_data <- c(values$upload_data, temp_ls)
     
+    values$upload_data <- c(values$upload_data, temp_ls)
   })
   
 }

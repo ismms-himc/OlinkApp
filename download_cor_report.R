@@ -3,7 +3,7 @@ download_cor_report_UI <- function(id) {
   
   ns <- NS(id)
   
-  downloadButton(ns("download_cor_report"), "Download Correlation Plots")
+  downloadButton(ns("download_cor_report"), "Batch Download Correlation Plots (All analytes)")
 }
 
 

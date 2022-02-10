@@ -3,19 +3,26 @@ read_npx <- function(f, lot = "default", startrow = 8, type = "NPX"){
   f_id <- paste("c", f)
   f_id <- substr(f_id, (nchar(f_id)-10), nchar(f_id))
   
-  if(type != "NPX"){
-    if(grepl("xlsx", f)){
-      npx <- readxl::read_xlsx(f, sheet = 1, col_names = F)
-    }else{
-      npx <- read.csv(f, header = F)
+  tryCatch(
+    {
+      if(type != "NPX"){
+        if(grepl("xlsx", f)){
+          npx <- readxl::read_xlsx(f, sheet = 1, col_names = F)
+        }else{
+          npx <- read.csv(f, header = F)
+        }
+        n_col <- length(npx[which(npx[, 1] == "LLOQ"), ])
+        npx[npx == ""] <- NA
+      }
+      else{
+        npx <- readxl::read_xlsx(f, sheet = which(readxl::excel_sheets(f) == "NPX Data"), col_names = F)
+        n_col <- length(npx[which(npx[, 1] == "LOD"), ])
+      }
+    },
+    error = function(e){
+      stop("Unable to upload wrong type of files, or the file was corrupted!")
     }
-    n_col <- length(npx[which(npx[, 1] == "LLOQ"), ])
-    npx[npx == ""] <- NA
-  }
-  else{
-    npx <- readxl::read_xlsx(f, sheet = which(readxl::excel_sheets(f) == "NPX Data"), col_names = F)
-    n_col <- length(npx[which(npx[, 1] == "LOD"), ])
-  }
+  )
   
   
   npx <- npx[, 1:n_col]
@@ -249,7 +256,8 @@ plot_npx_norm_qc <- function(normed_se, bridge_pattern= "OAAFKW", fields = "Assa
     geom_point(aes(LOD, Analyt), 
                data = data.frame(Analyt = factor(make.names(normed_se@elementMetadata$Analyt), levels = make.names(rownames(normed_se))),
                                  LOD = as.numeric(normed_se@elementMetadata$LOD)))+
-    labs(title = "Bridge QC Reference", y = "Analyte", x = "NPX")+
+    labs(#title = "Bridge QC Reference", 
+         y = "Analyte", x = "NPX")+
     facet_grid( ~ Assay)+
     theme_bw()+
     theme(legend.position = "bottom")+
