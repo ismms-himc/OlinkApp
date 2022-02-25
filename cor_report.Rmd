@@ -19,6 +19,7 @@ library(dplyr)
 library(DT)
 library(ggpubr)
 library(patchwork)
+library(ggrepel)
 ```
 
 
@@ -53,44 +54,62 @@ DT::datatable(
 ```
 
 
-```{r, echo=F, message=F, warning=F}
-paste("Total of", nrow(data_a), "Common analytes :")
-
-paste(common_analyte, collapse = ",")
-```
+### `r paste("Total of", nrow(data_a), "Common analytes :")`
+    
+**`r paste(common_analyte, collapse = ",")`**    
 
 ## Correlation of common analytes 
 
-**Dataset A: `r paste(params$rp_choice_b0)`**     
-**Dataset B: `r paste(params$rp_choice_b1)`**     
+**Dataset A: `r paste(params$rp_choice_b0)`**   
+    
+**Dataset B: `r paste(params$rp_choice_b1)`**    
 
 
 ```{r, echo=F, message=F, warning=F, out.width= "100%", results="hide"}
+flag <- ifelse((data_a$QC.Warning == "Pass") & (data_b$QC.Warning == "Pass"), "Pass", "Warning")
+
 data_a <- data_a@assays@data$npx
 data_b <- data_b@assays@data$npx
 
-data_a[is.na(data_a)] < 0
-data_b[is.na(data_b)] < 0
+data_a[is.na(data_a)] = min(data_a, na.rm = T)
+data_b[is.na(data_b)] = min(data_b, na.rm = T)
 
 rownames(data_a) <- rownames(data_b) <- common_analyte
 
 plot.ls <- lapply(common_analyte, function(x){
-  data.frame(A = data_a[rownames(data_a) == x, ],
+  df <- data.frame(A = data_a[rownames(data_a) == x, ],
              B = data_b[rownames(data_b) == x, ],
-             Sample = common_sample)%>%
-  ggscatter(x = "A", y = "B", size = 1,
-  add = "reg.line", conf.int = F)+
-  stat_cor(color = "red", size = 2)+
-  labs(title = x)+
-  theme_bw(base_size = 8)
+             Sample = common_sample,
+             Warning = flag)%>%
+    filter(!is.na(A) & (!is.na(B)))
+  
+  fit = lm(B ~ A, data = df)
+  fit <- abs(df$B - predict(fit))
+  df$Sample = ifelse((fit >= quantile(fit, probs = 0.98)), df$Sample, NA)
+  
+  range_min <- min(c(as.numeric(df$A), as.numeric(df$B)), na.rm = T)-0.1
+  range_max <- max(c(as.numeric(df$A), as.numeric(df$B)), na.rm = T)+0.1
+  
+  df%>%
+    ggscatter(x = "A", y = "B", fill = "Warning",
+              size = 1, shape = 21,
+              add = "reg.line", conf.int = F)+
+    lims(x = c(range_min, range_max),
+         y = c(range_min, range_max))+
+    stat_cor(color = "red", size = 2)+
+    geom_text_repel(aes(A, B, label = Sample), 
+                    size = 2)+
+    scale_fill_manual(values = c(NA, "red"))+
+    labs(title = x)+
+    theme_bw(base_size = 8)
 })
 
-per_panel <- 9
+per_panel <- 6
 n_panel <- ceiling(length(plot.ls)/per_panel)
 for (i in 1 : n_panel) {
   print(
     wrap_plots(plot.ls[(1 + (i-1) * per_panel) : min(length(plot.ls), (per_panel + (i-1) * per_panel))],
-               ncol = 3, nrow = 3, byrow = T)
+               ncol = 3, nrow = 2, byrow = T, guides = "collect") & theme(legend.position = 'bottom')
   )
 }
 ```

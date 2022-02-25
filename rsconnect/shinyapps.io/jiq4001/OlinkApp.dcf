@@ -5,9 +5,9 @@ account: jiq4001
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5243361
-bundleId: 5565374
+bundleId: 5618090
 url: https://jiq4001.shinyapps.io/OlinkApp/
-when: 1644509495.4646
-lastSyncTime: 1644509495.46461
+when: 1645807224.40435
+lastSyncTime: 1645807224.40436
 asMultiple: FALSE
 asStatic: FALSE

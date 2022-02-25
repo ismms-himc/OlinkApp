@@ -58,6 +58,7 @@ read_npx <- function(f, lot = "default", startrow = 8, type = "NPX"){
   colData <- cbind(unique_id, Assay = npx$Assay, file_name = toString(f), npx_ctrl)%>%
     setNames(make.names(names(.), unique = TRUE))%>%
     dplyr::mutate_at(.vars = dplyr::vars(dplyr::matches("Ctrl")), .funs = as.numeric)%>%
+    dplyr::mutate_at(.vars = dplyr::vars(dplyr::matches("QC.Deviation")), .funs = as.numeric)%>%
     data.frame(row.names = unique_id)
   colnames(colData)[which(colnames(colData) == "QC.Deviation.from.median")] <- "QC.Deviation.from.median.Inc.Ctrl"
   colnames(colData)[which(colnames(colData) == "QC.Deviation.from.median.1")] <- "QC.Deviation.from.median.Det.Ctrl"
@@ -261,7 +262,7 @@ plot_npx_norm_qc <- function(normed_se, bridge_pattern= "OAAFKW", fields = "Assa
     facet_grid( ~ Assay)+
     theme_bw()+
     theme(legend.position = "bottom")+
-    guides(color=guide_legend(nrow=2,byrow=TRUE))+
+    guides(color = guide_legend(ncol = 1,byrow = TRUE))+
     theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
   re <- list("all" = p1)

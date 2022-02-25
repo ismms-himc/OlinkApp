@@ -5,6 +5,7 @@ output: html_document
 params:
   rp_upload_data: NA
   rp_bridging_str: NA
+  rp_norm_method: NA
   rp_combined_data: NA
   rp_combined_meta: NA
 ---
@@ -34,7 +35,7 @@ DT::datatable(
       options = list(scrollX = TRUE))
 ```
  
-### Reference sample identifier: `r paste(strsplit(params$rp_bridging_str, split = ","), collapse = ",")`
+### Reference sample identifier: `r paste(strsplit(params$rp_bridging_str, split = ","), collapse = ",")`    
 
 ```{r, echo=F, message=F, warning=F}
 # needs sample_id, Plate.ID, in metafile and "lot" only appear once in column names
@@ -52,21 +53,27 @@ lapply(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), function(x){
 
 ```
 
+### Normalization Method:
+The plate-to-plate variation was adjusted based on adjust-factor(plate specific) which makes equal NPX value among reference samples identified above.    
+
+Between Plate Normalization Method: **`r paste(params$rp_norm_method)`**    
+
+
 ### PCA Before Normalization 
 
 ```{r, echo=F, out.width= "100%", message=F, warning=F}
-mat <- impute::impute.knn(t(params$rp_combined_data@assays@data$npx))$data
+mat <- params$rp_combined_data[ ,!grepl("(^NC|^IPC|randox)", ignore.case = T, params$rp_combined_data$Assay)]
 
-fit <- prcomp(mat)
+fit <- prcomp(impute::impute.knn(t(mat@assays@data$npx))$data)
 idf <- paste(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), collapse = "|")
 idf <- paste0("(", idf, ")")
 
 data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
            pc_2 = fit$x[ ,2],#fit$layout[ ,2],
-           sample_id = params$rp_combined_meta$sample_id,
-           type = ifelse(grepl(idf, ignore.case = T, params$rp_combined_meta$sample_id), "Ref", "Study_Sample"),
-           Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"))%>%
-        filter(!grepl("^(NC|IPC)", sample_id))%>%
+           sample_id = mat$Assay,
+           type = ifelse(grepl(idf, ignore.case = T, mat$Assay), "Ref", "Study_Sample"),
+           Plate.ID = trim_string_bycommon(mat$Plate.ID, split = "_"))%>%
+        #filter(!grepl("^(NC|IPC|randox)", ignore.case = T, sample_id))%>%
   ggplot()+
   geom_point(aes(pc_1, pc_2, color = Plate.ID, shape = type))+
   facet_wrap(~type)+
@@ -77,18 +84,18 @@ data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
 ### PCA After Normalization 
 
 ```{r, echo=F, out.width= "100%", message=F, warning=F}
-mat <- impute::impute.knn(t(params$rp_combined_data@assays@data$normed))$data
+#mat <- impute::impute.knn(t(params$rp_combined_data@assays@data$normed))$data
 
-fit <- prcomp(mat)
+fit <- prcomp(impute::impute.knn(t(mat@assays@data$normed))$data)
 idf <- paste(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), collapse = "|")
 idf <- paste0("(", idf, ")")
 
 data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
            pc_2 = fit$x[ ,2],#fit$layout[ ,2],
-           sample_id = params$rp_combined_meta$sample_id,
-           type = ifelse(grepl(idf, ignore.case = T, params$rp_combined_meta$sample_id), "Ref", "Study_Sample"),
-           Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"))%>%
-        filter(!grepl("^(NC|IPC)", sample_id))%>%
+           sample_id = mat$Assay,
+           type = ifelse(grepl(idf, ignore.case = T, mat$Assay), "Ref", "Study_Sample"),
+           Plate.ID = trim_string_bycommon(mat$Plate.ID, split = "_"))%>%
+        #filter(!grepl("^(NC|IPC|randox)", ignore.case = T, sample_id))%>%
   ggplot()+
   geom_point(aes(pc_1, pc_2, color = Plate.ID, shape = type))+
   facet_wrap(~type)+

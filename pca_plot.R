@@ -9,7 +9,16 @@ pca_plot_UI <- function(id) {
     column(12, actionButton(ns("run_pca"), "Run PCA")),
     column(6, selectInput(ns("choice_c1"), "Choose Color Variable", choices = "", selected = "File")),
     column(6, selectInput(ns("choice_c2"), "Choose label var", choices = "", selected = "File")),
-    column(12, plotOutput(ns("pca_plot"),width = "100%", height = "500px"))
+    column(12, plotOutput(ns("pca_plot"), click = ns("plot_click"), width = "100%", height = "500px")),
+    column(12, h4(p("Click Sample Point on", span("PCA Plot", style = "color:blue"), "to view the sample's Analyte value
+                    in", span("10%-90% quantile Range Plot(left panel),", style = "color:blue"), "and ", 
+                    span("Wanring-Deviation Plot (right panel),", style = "color:blue")))),
+    column(12, h4(p("Range barin", span("Grey,", style = "color:grey"),
+                    "LOD in", span("Blue,", style = "color:blue"),
+                    "Clicked Point NPX values in", span("Red.", style = "color:red")))),
+    column(8, plotOutput(ns("range_plot"), width = "100%", height = "400px")),
+    column(4, plotOutput(ns("deviation_plot"), width = "100%", height = "400px")),
+    column(12, DT::DTOutput(ns("click_df")))
   )
   
 }
@@ -47,24 +56,93 @@ pca_plot <- function(input, output, session, values) {
                                          pc_2 = values$pca_fit$x[ ,2])
   })
   
+  observe({
+    req(input$plot_click)
+      values$select_observe <- nearPoints(values$pca_fit$plot_df, input$plot_click, maxpoints = 1,
+                                             xvar = "pc_1", yvar = "pc_2")%>%
+        select(sample_id, Plate.ID, QC.Warning, 
+               QC.Deviation.from.median.Inc.Ctrl, 
+               QC.Deviation.from.median.Det.Ctrl,
+               pc_1, pc_2)
+      
+      values$select_observe_data <- data.frame(
+        npx = values$combined_data@assays@data$npx[ , (values$combined_meta$sample_id == values$select_observe$sample_id) &
+                                                      (values$combined_meta$Plate.ID == values$select_observe$Plate.ID)],
+        analyte = factor(make.names(values$combined_data@elementMetadata$Analyt), 
+                         levels = make.names(values$combined_data@elementMetadata$Analyt))
+      )
+  })
+  
+  
+  output$click_df <- DT::renderDT(
+    DT::datatable(
+      values$select_observe,
+      rownames = NULL,
+      options = list(scrollX = TRUE))
+  )
   
   output$pca_plot <- renderPlot({
     req(values$pca_fit)
     
-    values$pca_fit$plot_df%>%
+    p <- values$pca_fit$plot_df%>%
       filter(!grepl("(^NC|IPC|Randox)", ignore.case = T, sample_id))%>%
-      ggplot(aes_string("pc_1", "pc_2", color = input$choice_c1), alpha = 0.7, shape = 21)+
-      geom_point()+
+      ggplot(aes_string(x = "pc_1", y = "pc_2", color = input$choice_c1))+
+      geom_point(alpha = 0.7, shape = 21)+
+      stat_ellipse()+
+      ggrepel::geom_text_repel(aes_string(label = input$choice_c2))+
       labs(x     = paste0("1st dimension (",
                           round((values$pca_fit$sdev^2/sum(values$pca_fit$sdev^2))[1] * 100),
                           "%)"),
            y     = paste0("2nd dimension (",
                           round((values$pca_fit$sdev^2/sum(values$pca_fit$sdev^2))[2] * 100),
                           "%)"))+
-      stat_ellipse()+
-      ggrepel::geom_text_repel(aes_string(label = input$choice_c2))+
       theme_bw()+
       guides(color = "none")
     
+    if(is.null(values$select_observe)){
+      p
+    }else{
+      p + geom_point(data = values$select_observe, 
+                     size = 4, aes_string("pc_1", "pc_2"))
+    }
     })
+  
+  output$deviation_plot <- renderPlot({
+    req(values$combined_meta)
+    p <- values$combined_meta%>%
+      filter(!grepl("(^NC|IPC|Randox)", ignore.case = T, sample_id))%>%
+      ggplot(aes(QC.Deviation.from.median.Inc.Ctrl, QC.Deviation.from.median.Det.Ctrl))+
+      geom_point(aes(shape = QC.Warning), alpha = 0.7, shape = 21)+
+      scale_shape_manual(values = c(21, 16))+
+      theme_bw()+
+      theme(legend.position="bottom")+
+      guides(shape = "none")
+    
+    if(is.null(values$select_observe)){
+      p
+    }else{
+      p + geom_point(data = values$select_observe, shape = 21,
+                     size = 6, color = "red")
+    }
+    
+  })
+  
+  output$range_plot <- renderPlot({
+    req(values$range_summary)
+    
+    p <- ggplot(values$range_summary)+
+      geom_errorbar(aes(analyte, ymin = low, ymax = hi), color = "grey")+
+      geom_point(aes(analyte, LOD), color = "blue", shape = 13)+
+      theme_bw()+
+      labs(x = "", y = "NPX")+
+      theme(legend.position="bottom", legend.box="vertical",
+            axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5))
+    
+    if(is.null(values$select_observe_data)){
+      p
+    }else{
+      p + geom_point(data = values$select_observe_data,
+                     aes(analyte, npx), color = "red")
+    }
+  })
 }

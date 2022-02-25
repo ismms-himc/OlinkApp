@@ -59,6 +59,20 @@ upload_summary_box <- box(title = "Uploaded plate summary stat",
                          column(12, h4(icon("database"), "Uploaded plate summary stat"))),
                        show_file_level_meta_UI(id = "id_1")
                        )
+#p1.b-1 summary of plate analyte-wise na count and below LOD count ----
+upload_na_below_lod_box <- box(title = "File level analyte-wise na count and below LOD count",
+                               collapsible = TRUE,
+                               collapsed = TRUE,
+                               status = "info", solidHeader = TRUE, width = 12,
+                               fluidRow(
+                                 column(12, h4("File level analyte-wise NO-Read sample count"))),
+                               plot_missing_per_analyte_UI(id = "id_1"),
+                               fluidRow(
+                                 column(12, h4("File level analyte-wise below LOD sample count"))),
+                               plot_belowLOD_per_analyte_UI(id = "id_1")
+                               )
+
+
 
 # p1.c normalization setting ----
 reference_normalization_box <- box(title = "Reference Sample Setup and Optional Reference-sample-based Normalization",
@@ -154,6 +168,7 @@ pca_plot_box <- box(title = "PCA Plot",
                     status = "info", solidHeader = T, width = 12,
                     fluidRow(
                       column(12, h4(icon("circle"), "NC, IPC, Randox were removed before compute PCA.")),
+                      column(12, h4(icon("circle"), "For visulization purpose, NA value is imputated by analyte-wise mean")),
                       column(12, h4(icon("circle"), "Select dataset and click 'Run PCA' to generate the PCA plot."))),
                     pca_plot_UI(id = "id_1")
                     )
@@ -182,6 +197,7 @@ body <- dashboardBody(
   tabItems(tabItem(tabName = "upload_files",
                    fluidRow(upload_box),
                    fluidRow(upload_summary_box),
+                   fluidRow(upload_na_below_lod_box),
                    fluidRow(reference_normalization_box),
                    fluidRow(creat_obj_box),
                    fluidRow(meta_view_replace_box),

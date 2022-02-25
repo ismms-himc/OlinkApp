@@ -31,6 +31,7 @@ download_norm_report <- function(input, output, session, values) {
       params <- list(
         rp_upload_data = values$upload_data,
         rp_bridging_str = values$ref_sample_identifier,
+        rp_norm_method = values$norm_method,
         rp_combined_data = values$combined_data,
         rp_combined_meta = values$combined_meta
       )
