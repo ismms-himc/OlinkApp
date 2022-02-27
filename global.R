@@ -39,7 +39,7 @@ source("corr_plot.R")
 source("download_cor_report.R")
 source("analyte_panel_querry.R")
 
-load("olink_all_analyte_panel.rda")
+load("data/olink_all_analyte_panel.rda")
 panel_query <- unique(olink_all_analyte_panel$Query)%>%
   strsplit(split = ",")%>%
   unlist()%>%

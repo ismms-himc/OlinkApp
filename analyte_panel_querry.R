@@ -1,20 +1,20 @@
 
 # Function for module UI
 analyte_panel_querry_UI <- function(id) {
-  
+
   ns <- NS(id)
-  
+
   fluidRow(
     column(6, selectInput(ns("panel_1"), "Select Olink Panel A.", c("*", panel_query))),
     column(6, selectInput(ns("panel_2"), "Select Olink Panel B.", c("*", panel_query))),
     column(12, DT::DTOutput(ns("analyte_panel_querry_df"))))
-  
+
 }
 
 
 # Function for module server logic
 analyte_panel_querry <- function(input, output, session, olink_all_analyte_panel) {
-  
+
   output$analyte_panel_querry_df <- DT::renderDT(
     DT::datatable(
       olink_all_analyte_panel%>%
