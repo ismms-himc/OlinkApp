@@ -54,9 +54,12 @@ lapply(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), function(x){
 
 ### Reference trace plot
 
-```{r, echo=F, out.width= "100%", message=F, warning=F}
+```{r, echo=F, out.width= "100%", message=F, warning=F, results="asis"}
 # needs sample_id, Plate.ID, in metafile and "lot" only appear once in column names
-
+if(length(unique(params$rp_combined_meta$ref_sample)) == 1){
+  print("No reference sample was defined\n")
+}
+  
 if(sum(grepl("lot", ignore.case = T, colnames(params$rp_combined_meta))) > 0){
   df <- lapply(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), function(x){
     data.frame(Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"),
@@ -116,41 +119,64 @@ if(sum(grepl("lot", ignore.case = T, colnames(params$rp_combined_meta))) > 0){
 mat <- impute::impute.knn(t(params$rp_combined_data@assays@data$npx))$data
 
 fit <- prcomp(mat)
-idf <- paste(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), collapse = "|")
-idf <- paste0("(", idf, ")")
 
-idf_all <- strsplit(params$rp_bridging_str, split = ",")%>%unlist()
-which_idf <- function(check, idf){
-             idx <- sapply(idf, function(y){
-               grepl(y, ignore.case = T, check)
-             })
-             idf[idx][1]
-           }
+if(length(unique(params$rp_combined_meta$ref_sample)) > 1){
+  idf <- paste(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), collapse = "|")
+  idf <- paste0("(", idf, ")")
+  
+  idf_all <- strsplit(params$rp_bridging_str, split = ",")%>%unlist()
+  which_idf <- function(check, idf){
+               idx <- sapply(idf, function(y){
+                 grepl(y, ignore.case = T, check)
+               })
+               idf[idx][1]
+             }
+}
 
 
-data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
-           pc_2 = fit$x[ ,2],#fit$layout[ ,2],
-           sample_id = params$rp_combined_meta$sample_id,
-           type = ifelse(grepl(idf, ignore.case = T, params$rp_combined_meta$sample_id), "Ref", "Study_Sample"),
-           identifier = sapply(params$rp_combined_meta$sample_id, which_idf, idf = idf_all),
-           Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"))%>%
-        mutate(identifier = ifelse(is.na(identifier), "Study_Sample", identifier))%>%
-        filter(!grepl("^(NC|IPC|Randox)", ignore.case = T, sample_id))%>%
-  ggplot()+
-  geom_point(aes(pc_1, pc_2, shape = Plate.ID, color = identifier))+
-  facet_wrap(~type)+
-  theme_bw()+
-  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())+
-  guides(color = guide_legend(ncol=4))
 ```
+
+```{r, echo=F, out.width= "100%", message=F, warning=F}
+if(length(unique(params$rp_combined_meta$ref_sample)) > 1){
+  data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
+             pc_2 = fit$x[ ,2],#fit$layout[ ,2],
+             sample_id = params$rp_combined_meta$sample_id,
+             type = ifelse(grepl(idf, ignore.case = T, params$rp_combined_meta$sample_id), "Ref", "Study_Sample"),
+             identifier = sapply(params$rp_combined_meta$sample_id, which_idf, idf = idf_all),
+             Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"))%>%
+          mutate(identifier = ifelse(is.na(identifier), "Study_Sample", identifier))%>%
+          filter(!grepl("^(NC|IPC|Randox)", ignore.case = T, sample_id))%>%
+    ggplot()+
+    geom_point(aes(pc_1, pc_2, shape = Plate.ID, color = identifier))+
+    facet_wrap(~type)+
+    theme_bw()+
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())+
+    guides(color = guide_legend(ncol=4))
+}else{
+  data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
+             pc_2 = fit$x[ ,2],#fit$layout[ ,2],
+             sample_id = params$rp_combined_meta$sample_id,
+             QC.Warning = params$rp_combined_meta$QC.Warning,
+             Plate.ID = trim_string_bycommon(params$rp_combined_meta$Plate.ID, split = "_"))%>%
+          filter(!grepl("^(NC|IPC|Randox)", ignore.case = T, sample_id))%>%
+    ggplot()+
+    geom_point(aes(pc_1, pc_2, color = Plate.ID, shape = QC.Warning))+
+    scale_shape_manual(values = c(21, 16))+
+    theme_bw()+
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())+
+    guides(color = guide_legend(ncol=4))
+}
+
+```
+
 
 ### Detailed Reference Trace Plots
 
 **Yellow dots indicate LOD**       
 
 
-```{r, echo=F, out.width= "100%", message=F, warning=F}
-if(length(unique(params$rp_combined_meta$Plate.ID)) > 1){
+```{r, echo=F, out.width= "100%", message=F, warning=F, results="asis"}
+if((length(unique(params$rp_combined_meta$Plate.ID)) > 1) & (length(unique(params$rp_combined_meta$ref_sample)) > 1)){
  
   bridge.cmb <- data.frame(
              Plate.ID = params$rp_combined_meta$Plate.ID[grepl(idf, ignore.case = T, params$rp_combined_meta$sample_id)],
@@ -192,8 +218,10 @@ if(length(unique(params$rp_combined_meta$Plate.ID)) > 1){
                  guides = "collect") & theme(legend.position = 'bottom')
     )
    }
-}else{
-  print("not applicable for single plate.\n")
-}
+  }else if(length(unique(params$rp_combined_meta$ref_sample)) == 1){
+    print("No reference sample was defined\n")
+    }else{
+      print("Not applicable for single file\n")
+      }
 ```
 

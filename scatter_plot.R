@@ -6,7 +6,7 @@ scatter_plot_UI <- function(id) {
   
   fluidRow(
     column(3, selectInput(ns("choice_a0"), "Choose Analyte", choices = "", selected = NULL)),
-    column(3, selectInput(ns("choice_a1"), "Choose x asix var", choices = "", selected = "File")),
+    column(3, selectInput(ns("choice_a1"), "Choose x axis var", choices = "", selected = "File")),
     column(3, selectInput(ns("choice_a2"), "Choose color var", choices = "", selected = "File")),
     column(3, selectInput(ns("choice_a3"), "Choose label var", choices = "", selected = NULL)),
     column(12, plotlyOutput(ns("scatter_plot"),width = "100%", height = "800px"))

@@ -30,9 +30,9 @@ creat_data_obj <- function(input, output, session, values) {
       summarize(low = quantile(npx, probs = 0.1, na.rm = T),
                 hi = quantile(npx, probs = 0.9, na.rm = T))%>%
       left_join(
-        data.frame(analyte = factor(make.names(values$combined_data@elementMetadata$Analyt), 
-                                    levels = make.names(values$combined_data@elementMetadata$Analyt)),
-                   LOD = values$combined_data@elementMetadata$LOD))
+        data.frame(analyte = make.names(values$combined_data@elementMetadata$Analyt),
+                   LOD = values$combined_data@elementMetadata$LOD))%>%
+      mutate(analyte = factor(analyte, levels = make.names(values$combined_data@elementMetadata$Analyt)))
     
     ref_pattern <- paste(strsplit(input$ref_idf_str, split = ",")%>%unlist(), collapse = "|")
     ref_pattern <- paste0("(", ref_pattern, ")")

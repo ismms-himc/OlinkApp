@@ -63,19 +63,24 @@ Between Plate Normalization Method: **`r paste(params$rp_norm_method)`**
 
 ```{r, echo=F, out.width= "100%", message=F, warning=F}
 mat <- params$rp_combined_data[ ,!grepl("(^NC|^IPC|randox)", ignore.case = T, params$rp_combined_data$Assay)]
+ref_id <- strsplit(params$rp_bridging_str, split = ",")%>%unlist()
 
 fit <- prcomp(impute::impute.knn(t(mat@assays@data$npx))$data)
-idf <- paste(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), collapse = "|")
+idf <- paste(ref_id, collapse = "|")
 idf <- paste0("(", idf, ")")
 
-data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
+temp <- data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
            pc_2 = fit$x[ ,2],#fit$layout[ ,2],
            sample_id = mat$Assay,
            type = ifelse(grepl(idf, ignore.case = T, mat$Assay), "Ref", "Study_Sample"),
-           Plate.ID = trim_string_bycommon(mat$Plate.ID, split = "_"))%>%
-        #filter(!grepl("^(NC|IPC|randox)", ignore.case = T, sample_id))%>%
+           Plate.ID = trim_string_bycommon(mat$Plate.ID, split = "_"))
+  
+temp %>%
   ggplot()+
   geom_point(aes(pc_1, pc_2, color = Plate.ID, shape = type))+
+  geom_line(data = temp%>%
+              filter(sample_id %in% ref_id),
+            aes(pc_1, pc_2, group = sample_id), linetype = 2, alpha = 0.6)+
   facet_wrap(~type)+
   theme_bw()+
   theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())
@@ -87,17 +92,21 @@ data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
 #mat <- impute::impute.knn(t(params$rp_combined_data@assays@data$normed))$data
 
 fit <- prcomp(impute::impute.knn(t(mat@assays@data$normed))$data)
-idf <- paste(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), collapse = "|")
+idf <- paste(ref_id, collapse = "|")
 idf <- paste0("(", idf, ")")
 
-data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
+temp <- data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
            pc_2 = fit$x[ ,2],#fit$layout[ ,2],
            sample_id = mat$Assay,
            type = ifelse(grepl(idf, ignore.case = T, mat$Assay), "Ref", "Study_Sample"),
-           Plate.ID = trim_string_bycommon(mat$Plate.ID, split = "_"))%>%
-        #filter(!grepl("^(NC|IPC|randox)", ignore.case = T, sample_id))%>%
+           Plate.ID = trim_string_bycommon(mat$Plate.ID, split = "_"))
+
+temp %>%
   ggplot()+
   geom_point(aes(pc_1, pc_2, color = Plate.ID, shape = type))+
+  geom_line(data = temp%>%
+              filter(sample_id %in% ref_id),
+            aes(pc_1, pc_2, group = sample_id), linetype = 2, alpha = 0.6)+
   facet_wrap(~type)+
   theme_bw()+
   theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())
@@ -108,7 +117,7 @@ data.frame(pc_1 = fit$x[ ,1], #fit$layout[ ,1],
 **Black dots indicate LOD**       
 
 ```{r, echo=F, out.width= "100%", message=F, warning=F, fig.height = 15}
-ref_sample <- strsplit(params$rp_bridging_str, split = ",")%>%unlist()
-plot_npx_norm_qc(params$rp_combined_data, bridge_pattern = ref_sample[1])$all
+#ref_sample <- strsplit(params$rp_bridging_str, split = ",")%>%unlist()
+plot_npx_norm_qc(params$rp_combined_data, bridge_pattern = idf)$all
 ```
 

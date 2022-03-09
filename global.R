@@ -35,11 +35,12 @@ source("qc_global_plot.R")
 source("scatter_plot.R")
 source("download_scatter_report.R")
 source("pca_plot.R")
+source("download_pca_report.R")
+source("cor_summary_plot.R")
 source("corr_plot.R")
 source("download_cor_report.R")
 source("analyte_panel_querry.R")
-
-load("data/olink_all_analyte_panel.rda")
+load("olink_all_analyte_panel.rda")
 panel_query <- unique(olink_all_analyte_panel$Query)%>%
   strsplit(split = ",")%>%
   unlist()%>%

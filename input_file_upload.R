@@ -38,6 +38,7 @@ input_file_upload <- function(input, output, session, values) {
     }
     
     values$upload_data <- c(values$upload_data, temp_ls)
+    values$n_analyte <- max(sapply(values$upload_data, nrow))
   })
   
 }

@@ -5,10 +5,11 @@ meta_view_replace_UI <- function(id) {
   
   fluidRow(
     column(6, downloadButton(ns("export_meta"), "Download Current Meta Data")),
-    column(6, actionButton(ns("add_meta"), "Replace Meta Data file")),
-    column(12, fileInput(ns('import_meta'), label = "Upload Modified Meta Data",
+    br(),
+    column(12, fileInput(ns('import_meta'), label = "Select modified Metadata for upload",
                          multiple = F,
                          buttonLabel = "Browse or Drop...")),
+    column(6, actionButton(ns("add_meta"), "Replace existing Metadata")),
     column(12, DT::DTOutput(ns("meta_table")))
   )
   

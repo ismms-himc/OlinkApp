@@ -47,20 +47,23 @@ corr_plot <- function(input, output, session, values) {
   })
   
   output$corr_plot <- renderPlot({
-    range_min <- min(c(as.numeric(cor_df()$A), as.numeric(cor_df()$B)), na.rm = T)-0.1
-    range_max <- max(c(as.numeric(cor_df()$A), as.numeric(cor_df()$B)), na.rm = T)+0.1
-    
-    fit = lm(B ~ A, data = cor_df())
-    fit <- abs(cor_df()$B - predict(fit))
-    
-    cor_df()%>%
-      ggscatter(x = "A", y = "B", shape = 21, fill = "Warning",
-                add = "reg.line", conf.int = F)+
-      stat_cor(label.x.npc = 0.2, size = 6)+
-      lims(x = c(range_min, range_max),
-           y = c(range_min, range_max))+
-      geom_text_repel(aes(A, B, label = ifelse((fit >= quantile(fit, probs = 0.975)), Sample, NA)))+
-      scale_fill_manual(values = c(NA, "red"))+
-      labs(title = input$choice_b2)
-  })
+    req(cor_df())
+    if((nrow(cor_df()) != 0) & !is.null(cor_df())){
+      range_min <- min(c(as.numeric(cor_df()$A), as.numeric(cor_df()$B)), na.rm = T)-0.1
+      range_max <- max(c(as.numeric(cor_df()$A), as.numeric(cor_df()$B)), na.rm = T)+0.1
+      
+      fit = lm(B ~ A, data = cor_df())
+      fit <- abs(cor_df()$B - predict(fit))
+      
+      cor_df()%>%
+        ggscatter(x = "A", y = "B", shape = 21, fill = "Warning",
+                  add = "reg.line", conf.int = F)+
+        stat_cor(label.x.npc = 0.2, size = 6)+
+        lims(x = c(range_min, range_max),
+             y = c(range_min, range_max))+
+        geom_text_repel(aes(A, B, label = ifelse((fit >= quantile(fit, probs = 0.975)), Sample, NA)))+
+        scale_fill_manual(values = c(NA, "red"))+
+        labs(title = input$choice_b2)
+      }
+    })
 }

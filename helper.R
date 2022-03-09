@@ -260,10 +260,9 @@ plot_npx_norm_qc <- function(normed_se, bridge_pattern= "OAAFKW", fields = "Assa
     labs(#title = "Bridge QC Reference", 
          y = "Analyte", x = "NPX")+
     facet_grid( ~ Assay)+
-    theme_bw()+
+    theme_bw(base_size = 15)+
     theme(legend.position = "bottom")+
-    guides(color = guide_legend(ncol = 1,byrow = TRUE))+
-    theme(axis.text.x = element_text(angle = 60, hjust = 1))
+    guides(color = guide_legend(ncol = 2,byrow = TRUE))
   
   re <- list("all" = p1)
   

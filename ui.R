@@ -51,21 +51,22 @@ upload_box <- box(title = "Upload Data",
 
 
 # p1.b summary plate metadata of upload----
-upload_summary_box <- box(title = "Uploaded plate summary stat",
+upload_summary_box <- box(title = "Uploaded file/s summary stat",
                        collapsible = TRUE,
                        # collapsed = TRUE,
                        status = "primary", solidHeader = TRUE, width = 12,
                        fluidRow(
-                         column(12, h4(icon("database"), "Uploaded plate summary stat"))),
+                         column(12, h4(icon("database"), "Uploaded file/s summary stat"))),
                        show_file_level_meta_UI(id = "id_1")
                        )
-#p1.b-1 summary of plate analyte-wise na count and below LOD count ----
-upload_na_below_lod_box <- box(title = "File level analyte-wise na count and below LOD count",
+#p1.b-1 summary of plate analyte-wise na count below LOD count ----
+upload_na_below_lod_box <- box(title = "File level analyte-wise count of samples with analyte value NA(blank cell in file uploaded) or below LOD",
                                collapsible = TRUE,
                                collapsed = TRUE,
                                status = "info", solidHeader = TRUE, width = 12,
+                               style='overflow-x: scroll;overflow-y: scroll;',
                                fluidRow(
-                                 column(12, h4("File level analyte-wise NO-Read sample count"))),
+                                 column(12, h4("File level analyte-wise NA(blank cell in file uploaded) sample count"))),
                                plot_missing_per_analyte_UI(id = "id_1"),
                                fluidRow(
                                  column(12, h4("File level analyte-wise below LOD sample count"))),
@@ -75,19 +76,19 @@ upload_na_below_lod_box <- box(title = "File level analyte-wise na count and bel
 
 
 # p1.c normalization setting ----
-reference_normalization_box <- box(title = "Reference Sample Setup and Optional Reference-sample-based Normalization",
+reference_normalization_box <- box(title = "Optional Reference Sample Setup and Reference-sample-based Normalization",
                          collapsible = TRUE,
                          #collapsed = TRUE,
                          status = "warning", solidHeader = TRUE, width = 12,
                          fluidRow(
                            column(12, h4(icon("circle"), "Input Identifier to Setup Reference/Common Sample")),
-                           column(12, h4(p("If more than one set of reference are used, seperate identifier strings by ','. For example: 'HD1017,HD1018'.", 
-                                           span("Do not put empty space after ','", style = "color:red"))))),
+                           column(12, h4(p("If more than one set of reference are used, seperate identifier strings by ", span("Comma", style = "color:red"), "For example: 'HD1017,HD1018'"))),
+                           column(12, h4(p("Do not put empty space after ", span("Comma", style = "color:red"))))),
                          identify_reference_UI(id = "id_1"),
                         
                          fluidRow(column(12, h4(icon("star"), "Optional Reference-sample-based Normalization--Only within SAME Olink Panel")),
-                                  column(12, offset = 1, h4("Method: Reference-sample-based normalization The plate-to-plate variation was adjusted based on 
-                                                adjust-factor(plate specific) which makes equal NPX value among reference samples (HD_reference run on each plate)."))),
+                                  column(12, offset = 1, h4("Method: The file-to-file variation will be adjusted based on 
+                                                adjust-factor(file specific) which makes equal NPX value among reference samples (HD_reference run on each file)."))),
                          ref_normalization_UI(id = "id_1")
                         )
 
@@ -98,28 +99,31 @@ creat_obj_box <- box(title = "Creat Data Object",
                      status = "info", solidHeader = TRUE, width = 12,
                      fluidRow(
                        column(12, h4(icon("circle"), "Creat Data Object for Visulization and Download.")),
-                       column(12, offset = 1, h4(icon("star"), "If normalization is done, Normed_NPX data will be generated.")),
+                       column(12, offset = 1, h4(icon("star"), "If user defined reference-sample-based normalization is done, Normed_NPX data will be generated.")),
                        column(12, offset = 1, h4(icon("star"), "Raw_NPX, Normed_NPX, Feature, Meta data, and Clustergrammer input file will be produced in download.")),
-                       column(12, offset = 1, h4(icon("star"), "If combining Files of Different Olink Panels, only the COMMON analyte will be remained."))),
+                       column(12, offset = 1, h4(icon("star"), "If combining Files of Different Olink Panels, only the COMMON analyte will remain."))),
                      fluidRow(
                        column(4, creat_data_obj_UI(id = "id_1"))),
                      br(),
                      fluidRow(
-                       column(12, h4(div("Download ONLY AVALIABLE after 'Creat Data Object'!!!", style = "color:red"))),
+                       column(12, h4(div("Download and Visualization ONLY AVAILABLE after 'Create Data Object'!!!", style = "color:red"))),
+                       br(),
                        column(4, download_qa_report_UI(id = "id_1")),
                        column(4, download_norm_report_UI(id = "id_1")),
                        column(4, download_combined_data_UI(id = "id_1")))
 )
 
 # p1.d rename setup ----
-meta_view_replace_box <- box(title = "Metadata Setup",
+meta_view_replace_box <- box(title = "Optional Metadata Setup",
                   collapsible = TRUE,
                   collapsed = TRUE,
                   status = "primary", solidHeader = TRUE, width = 12,
                   fluidRow(
-                    column(12, h4(icon("circle"), "Download metadata for optional user input column, Tiempoint or Sample_Type for example.")),
-                    column(12, h4(icon("circle"), "Upload modified metadata to replace the current data in display")),
-                    column(12, h4(icon("circle"), "***DO NOT change Row Orders!!!"))),
+                    column(12, h4(icon("circle"), "After 'Create Data Object', File metadata will be shown below.")),
+                    column(12, h4(icon("circle"), "It is optional to 'Download assay Metadata'  to add user input column,  such as Tiempoint, Sample_Type for example.")),
+                    column(12, h4(icon("circle"), "Use 'Upload Modified Metadata' then 'Replace existing Metadata' to update the information. Edited metadata columns can be used in Visualization.")),
+                    column(12, h4(div("DO NOT change Row Orders!!!", style = "color:red")))),
+                  br(),
                   meta_view_replace_UI(id = "id_1")
                   )
 
@@ -128,12 +132,11 @@ qc_plot_box <- box(title = "Global Point Distribution Plot",
                    collapsible = TRUE,
                    collapsed = TRUE,
                    status = "warning", solidHeader = TRUE, width = 12,
+                   style='overflow-x: height:900px;scroll;overflow-y: scroll;',
                    fluidRow(
-                     column(12, h4(div("Use 'Reference Sample Setup Box' to change samples in view. To view all samples, user '*' as identifier.", style = "color:blue"))),
-                     column(12, h4(icon("circle"), "If viewing multiple set of identifiers, use the dropdown list.")),
-                     column(12, h4(icon("star"), "This panel can also be used to check Reference Sample pre/post Normalization."))),
-                   fluidRow(
-                     column(12, h4(icon("star"), "Plot shows samples of user's choice (in circle) and analyte's LOD (in black dot)"))),
+                     column(12, h4(div("Plot shows samples identified from 'Reference Sample Setup section'  (in circle) and analyte's LOD (in black dot). To view all samples, use '*' (asterisk) as identifier.", style = "color:blue"))),
+                     column(12, h4(icon("circle"), "If multiple sets of identifiers were defined, use the dropdown list.")),
+                     column(12, h4(icon("star"), "If 'Optional Reference-sample-based Normalization' is used, this panel can also be used to check Reference Sample pre/post Normalization."))),
                    qc_global_plot_UI(id = "id_1")
                         )
 
@@ -145,6 +148,9 @@ scatter_plot_box <- box(title = "Scatter Plot",
                         collapsed = T,
                         status = "warning", solidHeader = T, width = 12,
                         fluidRow(
+                          column(12, h4(div("This section plots NPX data from uploaded file, to view assay metadata or user updated additional metadata.", style = "color:blue"))),
+                          column(12, h4(icon("circle"), "'Batch Download Scatter Plots' will create a html report for all analytes.  Use dropdown option to query a single analyte, and set a preview template for the download report.")),
+                          br(),
                           column(12, download_scatter_report_UI(id = "id_1"))),
                         scatter_plot_UI(id = "id_1")
                         )
@@ -156,8 +162,13 @@ corr_plot_box <- box(title = "Correlation Plot--Based on NoneNormalized Data",
                      collapsed = T,
                      status = "primary", solidHeader = T, width = 12,
                      fluidRow(
+                       column(12, h4(div("This section plots NPX data from uploaded files, only common samples and common analytes will be used for plotting.", style = "color:blue"))),
+                       column(12, h4(icon("circle"), "'Batch Download Correlation Plots' will create a html report for all analytes.  Use dropdown option to query a single analyte.")),
                        column(12, download_cor_report_UI(id = "id_1"))),
-                     corr_plot_UI(id = "id_1")
+                     corr_plot_UI(id = "id_1"),
+                     fluidRow(
+                       column(12, h4("When viewing different files, TOP panel showes pearson correlation barplot, BOTTOM pannel shows CV plots in log10(scale) with median CV(in percentage) labeled")),
+                       cor_summary_plot_UI(id = "id_1"))
                      )
 
 
@@ -167,10 +178,15 @@ pca_plot_box <- box(title = "PCA Plot",
                     collapsed = T,
                     status = "info", solidHeader = T, width = 12,
                     fluidRow(
-                      column(12, h4(icon("circle"), "NC, IPC, Randox were removed before compute PCA.")),
-                      column(12, h4(icon("circle"), "For visulization purpose, NA value is imputated by analyte-wise mean")),
-                      column(12, h4(icon("circle"), "Select dataset and click 'Run PCA' to generate the PCA plot."))),
-                    pca_plot_UI(id = "id_1")
+                      column(12, h4(icon("circle"), "NC, IPC, Randox were removed before computing PCA.")),
+                      column(12, h4(icon("circle"), "For visulization purpose, NA value(blank cell in file uploaded) is imputated by analyte-wise mean")),
+                      column(12, h4(icon("circle"), "Select dataset and click 'Run PCA' to generate the PCA plot.")),
+                      column(12, h4(icon("circle"), "If 'Optional Reference-sample-based Normalization' is done, 'normed_NPX' will be available in the 'Choose Dataset Type' dropdown list."))),
+                    pca_plot_UI(id = "id_1"),
+                    fluidRow(
+                      column(12, h4(icon("circle"), "'Batch Download PCA NA Checking Report' will create a html report for all samples with blank value, showing sample’s NPX value 10%-90% quantile Range Plot,  sample highlighted in red Warning-Deviation Plot, sample highlighted with the name of missing analyte displayed in PCA plot.")),
+                      column(12, h4(icon("circle"), "PCA color code in this section is a  preview for the download report’s PCA plot.")),
+                      column(12, download_pca_report_UI(id = "id_1")))
                     )
 
 

@@ -1,0 +1,135 @@
+---
+title: "Olink Assay Plots"
+output: html_document
+
+params:
+  rp_upload_data: NA
+  rp_combined_meta: NA
+  rp_combined_data: NA
+  rp_choice_c0: NA
+  rp_choice_c1: NA
+  rp_choice_c2: NA
+  rp_pca_fit: NA
+  rp_range_summary: NA
+---
+
+```{r eval = FALSE, echo = FALSE}
+# For PDF output, change the header to have "output: pdf_document".
+#
+# Note that due to an issue in rmarkdown, the default value of a parameter in
+# the header cannot be `NULL`, so I used a default of `NA` for the default value
+# of `n`.
+library(dplyr)
+library(DT)
+library(patchwork)
+```
+
+
+## Summary of plate level information.
+
+
+```{r, echo=F, message=F, warning=F}
+DT::datatable(
+      data.frame(software_version = sapply(params$rp_upload_data, function(x) x@metadata$software_version) %>% unlist(),
+                 filename = sapply(params$rp_upload_data, function(x) x$file_name[1]) %>% unlist(),
+                 panel = sapply(params$rp_upload_data, function(x) x@metadata$panel)%>% unlist(),
+                 total_samples = sapply(params$rp_upload_data, function(x) ncol(x)) %>% unlist(),
+                 total_analyte = sapply(params$rp_upload_data, function(x) nrow(x)) %>% unlist()),
+      rownames = NULL,
+      options = list(scrollX = TRUE))
+```
+ 
+### PCA
+
+**Sample set: `r params$rp_choice_c0`**    
+**NA value in the data set is imputated with analyte-wise mean for algorithm computation puprouses.**    
+**NC, IPC, Randox were excluded from the dataset**.    
+
+```{r, echo=F}
+
+p_pca <- params$rp_pca_fit$plot_df%>%
+  filter(!grepl("(^NC|IPC|Randox)", ignore.case = T, sample_id))%>%
+  ggplot(aes_string(x = "pc_1", y = "pc_2", color = params$rp_choice_c1))+
+  geom_point(shape = 21, size = 2, alpha = 0.6)+
+  stat_ellipse()+
+  labs(x     = paste0("1st dimension (",
+                      round((params$rp_pca_fit$sdev^2/sum(params$rp_pca_fit$sdev^2))[1] * 100),
+                      "%)"),
+       y     = paste0("2nd dimension (",
+                      round((params$rp_pca_fit$sdev^2/sum(params$rp_pca_fit$sdev^2))[2] * 100),
+                      "%)"))+
+  theme_bw(base_size = 8)+
+  theme(legend.text = element_text(size = 8))+
+  guides(color = guide_legend(ncol = 2))
+
+p_dev <- params$rp_combined_meta%>%
+      filter(!grepl("(^NC|IPC|Randox)", ignore.case = T, sample_id))%>%
+      ggplot(aes(QC.Deviation.from.median.Inc.Ctrl, QC.Deviation.from.median.Det.Ctrl))+
+      geom_point(aes(shape = QC.Warning), shape = 21, size = 2)+
+      scale_shape_manual(values = c(21, 16))+
+      theme_bw(base_size = 8)
+
+p_range <- ggplot(params$rp_range_summary)+
+      geom_errorbar(aes(analyte, ymin = low, ymax = hi), color = "grey")+
+      geom_point(aes(analyte, LOD), color = "blue", shape = 13)+
+      theme_bw()+
+      labs(x = "", y = "NPX")+
+      theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5, size = 6))
+```
+
+```{r, echo=F, out.width= "100%", message=F, warning=F, results='asis'}
+select_observe <- params$rp_pca_fit$plot_df%>%
+  filter(!is.na(sample_with_na))
+layout <- "
+AAAAAA
+AAAAAA
+BBBCCC
+BBBCCC
+"
+
+if(nrow(select_observe) == 0){
+  print(p_range + p_pca + p_dev + plot_layout(design = layout, guides = "collect") & theme(legend.position="bottom", legend.box="vertical"))
+  print("There is no Sample with NA value.")
+}else{
+  for (i in 1 : nrow(select_observe)) {
+    
+    #pca
+    p1 <- p_pca + geom_point(data = select_observe%>%
+                               filter(row_number() == i), 
+                             size = 4, aes_string("pc_1", "pc_2"))+
+      ggrepel::geom_text_repel(data = select_observe%>%
+                               filter(row_number() == i), color = "black",
+                               aes_string(label = params$rp_choice_c2))
+    #range
+    select_observe_data <- data.frame(
+          npx = params$rp_combined_data@assays@data$npx[ , (params$rp_combined_meta$sample_id == select_observe[i, "sample_id"]) &
+                                                        (params$rp_combined_meta$Plate.ID == select_observe[i, "Plate.ID"])],
+          analyte = factor(make.names(params$rp_combined_data@elementMetadata$Analyt), 
+                           levels = make.names(params$rp_combined_data@elementMetadata$Analyt))
+        )
+    p2 <- p_range + geom_point(data = select_observe_data,
+                   aes(analyte, npx), color = "red")
+    #deviation
+    p3 <- p_dev + geom_point(data = select_observe%>%
+                              filter(row_number() == i), shape = 8,size = 4, color = "red")
+    
+    print(p2 + p1 + p3 + plot_layout(design = layout, guides = "collect") & theme(legend.position="bottom", legend.box="vertical"))
+    
+    #sample's datatable
+    dat <- select_observe%>%
+       filter(row_number() == i)%>%
+       select(sample_id, Plate.ID, QC.Warning, 
+            QC.Deviation.from.median.Inc.Ctrl, 
+            QC.Deviation.from.median.Det.Ctrl,
+            pc_1, pc_2)%>%
+       DT::datatable(rownames = NULL, options = list(scrollX = TRUE))
+    print(
+      htmltools::tagList(dat)
+      )
+    } 
+}
+  
+
+
+```
+
