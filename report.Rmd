@@ -147,7 +147,7 @@ if(length(unique(params$rp_combined_meta$ref_sample)) > 1){
           mutate(identifier = ifelse(is.na(identifier), "Study_Sample", identifier))%>%
           filter(!grepl("^(NC|IPC|Randox)", ignore.case = T, sample_id))%>%
     ggplot()+
-    geom_point(aes(pc_1, pc_2, shape = Plate.ID, color = identifier))+
+    geom_point(aes(pc_1, pc_2, color = Plate.ID, shape = identifier))+
     facet_wrap(~type)+
     theme_bw()+
     theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())+

@@ -58,7 +58,7 @@ pca_plot <- function(input, output, session, values) {
     
     mat <- apply(mat, 2, function(x){
       temp <- x
-      temp[is.na(temp)] <- mean(temp, na.rm = T)
+      temp[is.na(temp)] <- ifelse(is.na(mean(temp, na.rm = T)), 0, mean(temp, na.rm = T)) # ifelse for all sample == NA case
       temp
     })
     set.seed(1234)
@@ -108,8 +108,14 @@ pca_plot <- function(input, output, session, values) {
            y     = paste0("2nd dimension (",
                           round((values$pca_fit$sdev^2/sum(values$pca_fit$sdev^2))[2] * 100),
                           "%)"))+
-      theme_bw(base_size = 15)+
-      guides(color = "none")
+      theme_bw(base_size = 15)
+    
+    
+    if(length(unique(values$pca_fit$plot_df[[input$choice_c1]])) > 10){
+      p <- p+
+        guides(color = "none")
+    }
+    
     
     if(input$shape_missing == "No"){
       p <- p
