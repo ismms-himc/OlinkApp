@@ -9,6 +9,7 @@ params:
   rp_combined_meta: NA
   rp_choice_a1: NA #x var
   rp_choice_a2: NA # color 
+  rp_batch_plot_scatter: NA
 ---
 
 ```{r eval = FALSE, echo = FALSE}
@@ -76,7 +77,13 @@ if(sum(grep("(LOD_)", colnames(lod_df))) == 0){
         mutate(Plate.ID = gsub("LOD_", "", Plate.ID))
     }
 
-plot.ls <- lapply(rownames(params$rp_combined_data), function(x){
+if(is.null(params$rp_batch_plot_scatter) | (length(params$rp_batch_plot_scatter) == 0)){
+  query <- rownames(params$rp_combined_data)
+}else{
+  query <- params$rp_batch_plot_scatter
+}
+
+plot.ls <- lapply(query, function(x){
   p <- data.frame(params$rp_combined_meta,
              NPX = params$rp_combined_data@assays@data$npx[rownames(params$rp_combined_data) == x , ]
              )%>%

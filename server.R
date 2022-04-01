@@ -5,10 +5,12 @@ server <- function(input, output, session) {
                            normed_data = NULL,
                            combined_data = NULL,
                            combined_meta = NULL,
-                           select_observe = NULL,
-                           select_observe_data = NULL, # npx values of select_observe
-                           range_summary = NULL, # 10-90 quantile range summary by plate
+                           select_observe = NULL, # clicked point in pca plot
+                           select_observe_data = NULL, # npx values of select_observe (clicked point in pca plot)
+                           range_summary = NULL, # 10-90 quantile range summary by analyte (part of PCA box)
                            pca_fit = NULL,
+                           batch_plot_sample_ls = NULL, # samples to batch plot in pca.report
+                           batch_plot_analyte_ls = NULL, # analyte to batch plot in cor.report
                            n_analyte = NULL)
   
 
@@ -47,14 +49,20 @@ server <- function(input, output, session) {
   callModule(module = scatter_plot, id = "id_1", values)
 
   callModule(module = download_scatter_report, id = "id_1", values)
+  
+  callModule(module = user_select_list, id = "id_3", values, type = "analyte")
 
   callModule(module = cor_summary_plot, id = "id_1", values)
   
   callModule(module = corr_plot, id = "id_1", values)
+  
+  callModule(module = user_select_list, id = "id_2", values, type = "analyte")
 
   callModule(module = download_cor_report, id = "id_1", values)
 
   callModule(module = pca_plot, id = "id_1", values)
+  
+  callModule(module = user_select_list, id = "id_1", values, type = "sample_id")
   
   callModule(module = download_pca_report, id = "id_1", values)
 

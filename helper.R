@@ -139,7 +139,8 @@ bdg_norm_multi <- function(bridge.str, data.ls, between.plate.method = "median",
   if(length(adj.ls) > 1){
     for (i in names(adj.mean)) {
       for (j in 2 : length(adj.ls)) {
-        adj.mean[[i]] <- adj.mean[[i]] + adj.ls[[j]][[i]]
+        #adj.mean[[i]] <- adj.mean[[i]] + adj.ls[[j]][[i]]
+        adj.mean[[i]] <- mapply(function(x, y) sum(x, y, na.rm = T), x = adj.mean[[i]], y = adj.ls[[j]][[i]]) 
       }
       adj.mean[[i]] <- adj.mean[[i]]/length(adj.ls)
     }

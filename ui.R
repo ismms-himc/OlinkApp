@@ -149,10 +149,13 @@ scatter_plot_box <- box(title = "Scatter Plot",
                         status = "warning", solidHeader = T, width = 12,
                         fluidRow(
                           column(12, h4(div("This section plots NPX data from uploaded file, to view assay metadata or user updated additional metadata.", style = "color:blue"))),
-                          column(12, h4(icon("circle"), "'Batch Download Scatter Plots' will create a html report for all analytes.  Use dropdown option to query a single analyte, and set a preview template for the download report.")),
-                          br(),
-                          column(12, download_scatter_report_UI(id = "id_1"))),
-                        scatter_plot_UI(id = "id_1")
+                          column(12, h4(icon("circle"), "Use dropdown option to query a single analyte, and set a preview template for the download report."))),
+                        scatter_plot_UI(id = "id_1"),
+                        fluidRow(column(12, h4(icon("star"), "User defined analyte for batch plot downloads. If more than one analytes are listed, seperate analytes by Comma.")),
+                                 column(12, h4(div("If no user input is made, use 'Batch Download Scatter Plots' to download correlation plots for all analytes", style = "color:blue")))),
+                        user_select_list_UI(id = "id_3"),
+                        fluidRow(
+                          column(12, download_scatter_report_UI(id = "id_1")))
                         )
 
 
@@ -161,6 +164,9 @@ corr_plot_box <- box(title = "Correlation Plot--Based on NoneNormalized Data",
                      collapsible = T,
                      collapsed = T,
                      status = "primary", solidHeader = T, width = 12,
+                     fluidRow(column(12, h4(icon("star"), "User defined analyte for batch plot downloads. If more than one analytes are listed, seperate analytes by Comma.")),
+                              column(12, h4(div("If no user input is made, use 'Batch Download Correlation Plots' to download correlation plots for all analytes", style = "color:blue")))),
+                     user_select_list_UI(id = "id_2"),
                      fluidRow(
                        column(12, h4(div("This section plots NPX data from uploaded files, only common samples and common analytes will be used for plotting.", style = "color:blue"))),
                        column(12, h4(icon("circle"), "'Batch Download Correlation Plots' will create a html report for all analytes.  Use dropdown option to query a single analyte.")),
@@ -186,6 +192,10 @@ pca_plot_box <- box(title = "PCA Plot",
                     fluidRow(
                       column(12, h4(icon("circle"), "'Batch Download PCA NA Checking Report' will create a html report for all samples with blank value, showing sample’s NPX value 10%-90% quantile Range Plot,  sample highlighted in red Warning-Deviation Plot, sample highlighted with the name of missing analyte displayed in PCA plot.")),
                       column(12, h4(icon("circle"), "PCA color code in this section is a  preview for the download report’s PCA plot.")),
+                      column(12, h4(icon("star"), "User defined sample_id for batch plot downloads. If more than one samplie_id are listed, seperate samplie_ids by Comma.")),
+                      column(12, h4(div("If no user input is made, use 'Batch Download PCA Report' to download sample with NA values(blank cell in file uploaded)", style = "color:blue")))),
+                    user_select_list_UI(id = "id_1"),
+                    fluidRow(
                       column(12, download_pca_report_UI(id = "id_1")))
                     )
 

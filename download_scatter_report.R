@@ -31,7 +31,8 @@ download_scatter_report <- function(input, output, session, values) {
         rp_combined_data = values$combined_data,
         rp_combined_meta = values$combined_meta,
         rp_choice_a1 = input$choice_a1,
-        rp_choice_a2 = input$choice_a2
+        rp_choice_a2 = input$choice_a2,
+        rp_batch_plot_scatter = values$batch_plot_analyte_ls
       )
       
       # Knit the document, passing in the `params` list, and eval it in a

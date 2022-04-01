@@ -11,6 +11,7 @@ params:
   rp_choice_c2: NA
   rp_pca_fit: NA
   rp_range_summary: NA
+  rp_batch_plot_pca: NA
 ---
 
 ```{r eval = FALSE, echo = FALSE}
@@ -59,8 +60,17 @@ p_pca <- params$rp_pca_fit$plot_df%>%
                       round((params$rp_pca_fit$sdev^2/sum(params$rp_pca_fit$sdev^2))[2] * 100),
                       "%)"))+
   theme_bw(base_size = 8)+
-  theme(legend.text = element_text(size = 8))+
-  guides(color = guide_legend(ncol = 2))
+  theme(legend.text = element_text(size = 8))
+
+if(length(unique(params$rp_pca_fit$plot_df[[params$rp_choice_c1]])) > 10){
+  p_pca <- p_pca + 
+    guides(color = "none")
+}else{
+  p_pca <- p_pca +
+    guides(color = guide_legend(ncol = 2))
+}
+
+
 
 p_dev <- params$rp_combined_meta%>%
       filter(!grepl("(^NC|IPC|Randox)", ignore.case = T, sample_id))%>%
@@ -78,8 +88,16 @@ p_range <- ggplot(params$rp_range_summary)+
 ```
 
 ```{r, echo=F, out.width= "100%", message=F, warning=F, results='asis'}
-select_observe <- params$rp_pca_fit$plot_df%>%
-  filter(!is.na(sample_with_na))
+# if no costumized value only print na
+
+if(is.null(params$rp_batch_plot_pca) | (length(params$rp_batch_plot_pca) == 0)){
+  select_observe <- params$rp_pca_fit$plot_df%>%
+    filter(!is.na(sample_with_na))
+}else{
+  select_observe <- params$rp_pca_fit$plot_df%>%
+    filter(sample_id %in% params$rp_batch_plot_pca)
+}
+
 layout <- "
 AAAAAA
 AAAAAA

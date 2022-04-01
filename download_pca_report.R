@@ -5,7 +5,7 @@ download_pca_report_UI <- function(id) {
   
   ns <- NS(id)
   
-  downloadButton(ns("download_pca_report"), "Batch Download PCA NA Checking Report")
+  downloadButton(ns("download_pca_report"), "Batch Download PCA Report")
 }
 
 
@@ -35,7 +35,8 @@ download_pca_report <- function(input, output, session, values) {
         rp_choice_c1 = input$choice_c1,
         rp_choice_c2 = input$choice_c2,
         rp_pca_fit = values$pca_fit,
-        rp_range_summary = values$range_summary
+        rp_range_summary = values$range_summary,
+        rp_batch_plot_pca = values$batch_plot_sample_ls
       )
       
       # Knit the document, passing in the `params` list, and eval it in a

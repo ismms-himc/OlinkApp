@@ -54,7 +54,7 @@ meta_view_replace <- function(input, output, session, values) {
   
   
   output$meta_table <- DT::renderDT({
-    DT::datatable(values$combined_meta, editable = TRUE, options = list(scrollX = TRUE))
+    DT::datatable(values$combined_meta, editable = TRUE, options = list(scrollX = TRUE), rownames = F)
     
   })
 }

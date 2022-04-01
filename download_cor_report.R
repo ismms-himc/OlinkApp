@@ -3,7 +3,7 @@ download_cor_report_UI <- function(id) {
   
   ns <- NS(id)
   
-  downloadButton(ns("download_cor_report"), "Batch Download Correlation Plots (All analytes)")
+  downloadButton(ns("download_cor_report"), "Batch Download Correlation Plots")
 }
 
 
@@ -30,7 +30,8 @@ download_cor_report <- function(input, output, session, values) {
         rp_upload_data = values$upload_data,
         rp_combined_meta = values$combined_meta,
         rp_choice_b0 = input$choice_b0,
-        rp_choice_b1 = input$choice_b1
+        rp_choice_b1 = input$choice_b1,
+        rp_batch_plot_scatter = values$batch_plot_analyte_ls
       )
       
       # Knit the document, passing in the `params` list, and eval it in a
