@@ -79,6 +79,8 @@ rownames(data_a) <- rownames(data_b) <- common_analyte
 
 if(is.null(params$rp_batch_plot_cor) | (length(params$rp_batch_plot_cor) == 0)){
   query <- common_analyte
+}else if(params$rp_batch_plot_cor == ""){
+  query <- common_analyte
 }else{
   query <- params$rp_batch_plot_cor
 }

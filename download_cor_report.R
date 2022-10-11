@@ -31,7 +31,7 @@ download_cor_report <- function(input, output, session, values) {
         rp_combined_meta = values$combined_meta,
         rp_choice_b0 = input$choice_b0,
         rp_choice_b1 = input$choice_b1,
-        rp_batch_plot_scatter = values$batch_plot_analyte_ls
+        rp_batch_plot_cor = values$batch_plot_analyte_ls
       )
       
       # Knit the document, passing in the `params` list, and eval it in a

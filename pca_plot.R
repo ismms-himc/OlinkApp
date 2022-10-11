@@ -8,8 +8,9 @@ pca_plot_UI <- function(id) {
     column(12, selectInput(ns("choice_c0"), "Choose Dataset Type", choices = "", selected = NULL)),
     column(6, actionButton(ns("run_pca"), "Run PCA")),
     column(6, radioButtons(ns("shape_missing"), "Highlight Sample with NA value(blank cell in file uploaded)", choices = c("No", "Yes"), inline = TRUE)),
-    column(6, selectInput(ns("choice_c1"), "Choose Color Variable", choices = "", selected = "File")),
-    column(6, selectInput(ns("choice_c2"), "Choose label var", choices = "", selected = "File")),
+    column(4, selectInput(ns("choice_c1"), "Choose Color Variable", choices = "", selected = "File")),
+    column(4, selectInput(ns("choice_c2"), "Choose label var", choices = "", selected = "File")),
+    column(4, selectInput(ns("choice_c3"), "Choose select dot color", choices = "", selected = "red")),
     column(12, plotOutput(ns("pca_plot"), click = ns("plot_click"), width = "100%", height = "500px")),
     column(12, h4(p("Click Sample Point on", span("PCA Plot", style = "color:blue"), "to view the sample's Analyte value
                     in", span("10%-90% quantile Range Plot(left panel),", style = "color:blue"), "and ", 
@@ -41,6 +42,9 @@ pca_plot <- function(input, output, session, values) {
   })
   observe({
     updateSelectInput(session, "choice_c2", choices = names(values$combined_meta))
+  })
+  observe({
+    updateSelectInput(session, "choice_c3", choices = c("red", "purple", "dark green"))
   })
   
   
@@ -130,7 +134,7 @@ pca_plot <- function(input, output, session, values) {
       p
     }else{
       p + geom_point(data = values$select_observe, 
-                     size = 4, aes_string("pc_1", "pc_2"))
+                     size = 4, aes_string("pc_1", "pc_2"), color = input$choice_c3)
     }
     })
   
@@ -149,7 +153,7 @@ pca_plot <- function(input, output, session, values) {
       p
     }else{
       p + geom_point(data = values$select_observe, shape = 8,
-                     size = 4, color = "red")
+                     size = 4, color = input$choice_c3)
     }
     
   })

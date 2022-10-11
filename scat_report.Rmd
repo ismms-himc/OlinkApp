@@ -77,7 +77,10 @@ if(sum(grep("(LOD_)", colnames(lod_df))) == 0){
         mutate(Plate.ID = gsub("LOD_", "", Plate.ID))
     }
 
+
 if(is.null(params$rp_batch_plot_scatter) | (length(params$rp_batch_plot_scatter) == 0)){
+  query <- rownames(params$rp_combined_data)
+}else if(params$rp_batch_plot_scatter == ""){
   query <- rownames(params$rp_combined_data)
 }else{
   query <- params$rp_batch_plot_scatter

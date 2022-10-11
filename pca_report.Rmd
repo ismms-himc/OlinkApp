@@ -9,6 +9,7 @@ params:
   rp_choice_c0: NA
   rp_choice_c1: NA
   rp_choice_c2: NA
+  rp_choice_c3: NA
   rp_pca_fit: NA
   rp_range_summary: NA
   rp_batch_plot_pca: NA
@@ -52,7 +53,7 @@ p_pca <- params$rp_pca_fit$plot_df%>%
   filter(!grepl("(^NC|IPC|Randox)", ignore.case = T, sample_id))%>%
   ggplot(aes_string(x = "pc_1", y = "pc_2", color = params$rp_choice_c1))+
   geom_point(shape = 21, size = 2, alpha = 0.6)+
-  stat_ellipse()+
+  #stat_ellipse()+
   labs(x     = paste0("1st dimension (",
                       round((params$rp_pca_fit$sdev^2/sum(params$rp_pca_fit$sdev^2))[1] * 100),
                       "%)"),
@@ -93,6 +94,9 @@ p_range <- ggplot(params$rp_range_summary)+
 if(is.null(params$rp_batch_plot_pca) | (length(params$rp_batch_plot_pca) == 0)){
   select_observe <- params$rp_pca_fit$plot_df%>%
     filter(!is.na(sample_with_na))
+}else if(params$rp_batch_plot_pca == ""){
+  select_observe <- params$rp_pca_fit$plot_df%>%
+    filter(!is.na(sample_with_na))
 }else{
   select_observe <- params$rp_pca_fit$plot_df%>%
     filter(sample_id %in% params$rp_batch_plot_pca)
@@ -114,7 +118,8 @@ if(nrow(select_observe) == 0){
     #pca
     p1 <- p_pca + geom_point(data = select_observe%>%
                                filter(row_number() == i), 
-                             size = 4, aes_string("pc_1", "pc_2"))+
+                             size = 4, aes_string("pc_1", "pc_2"),color = params$rp_choice_c3
+                             )+
       ggrepel::geom_text_repel(data = select_observe%>%
                                filter(row_number() == i), color = "black",
                                aes_string(label = params$rp_choice_c2))
@@ -126,10 +131,11 @@ if(nrow(select_observe) == 0){
                            levels = make.names(params$rp_combined_data@elementMetadata$Analyt))
         )
     p2 <- p_range + geom_point(data = select_observe_data,
-                   aes(analyte, npx), color = "red")
+                   aes(analyte, npx), color = params$rp_choice_c3)
     #deviation
     p3 <- p_dev + geom_point(data = select_observe%>%
-                              filter(row_number() == i), shape = 8,size = 4, color = "red")
+                              filter(row_number() == i), size = 4,color = params$rp_choice_c3
+                             )
     
     print(p2 + p1 + p3 + plot_layout(design = layout, guides = "collect") & theme(legend.position="bottom", legend.box="vertical"))
     

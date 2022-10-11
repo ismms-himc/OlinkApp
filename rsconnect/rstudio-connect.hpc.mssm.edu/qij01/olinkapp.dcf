@@ -1,0 +1,13 @@
+name: olinkapp
+title: OlinkApp
+username: qij01
+account: qij01
+server: rstudio-connect.hpc.mssm.edu
+hostUrl: https://rstudio-connect.hpc.mssm.edu/__api__
+appId: 94
+bundleId: 369
+url: https://rstudio-connect.hpc.mssm.edu/content/94/
+when: 1649277074.52527
+lastSyncTime: 1649277074.52528
+asMultiple: FALSE
+asStatic: FALSE

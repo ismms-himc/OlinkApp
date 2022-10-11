@@ -34,6 +34,7 @@ download_pca_report <- function(input, output, session, values) {
         rp_choice_c0 = input$choice_c0,
         rp_choice_c1 = input$choice_c1,
         rp_choice_c2 = input$choice_c2,
+        rp_choice_c3 = input$choice_c3,
         rp_pca_fit = values$pca_fit,
         rp_range_summary = values$range_summary,
         rp_batch_plot_pca = values$batch_plot_sample_ls

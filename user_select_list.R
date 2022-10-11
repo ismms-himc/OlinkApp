@@ -22,7 +22,8 @@ user_select_list <- function(input, output, session, values, type) {
     req(input$user_select_list)
     if(type == "analyte"){
       values$batch_plot_analyte_ls <- strsplit(input$user_select_list, split = ",")%>%unlist()%>%unique()
-    }else{
+    }
+    if(type == "sample_id"){
       # sample_id 
       values$batch_plot_sample_ls <- strsplit(input$user_select_list, split = ",")%>%unlist()%>%unique()
     }
