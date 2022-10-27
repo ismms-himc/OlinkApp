@@ -15,6 +15,8 @@ server <- function(input, output, session) {
   
 
   callModule(module = analyte_panel_querry, id = "id_1", olink_all_analyte_panel)
+  
+  callModule(module = analyte_network, id = "id_1", olink_all_analyte_panel, cell2cell, analyte_type_db)
 
   callModule(module = reset_dataset, id = "id_1", values)
 

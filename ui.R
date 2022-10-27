@@ -28,11 +28,23 @@ olink_pub_box <- box(title = "Olink-immuno-oncology-validation-data--Different S
 analyte_panel_querry_box <- box(title = "Overlapping Analyte Panel Query",
                      status = "warning", solidHeader = TRUE, width = 12,
                      collapsible = TRUE,
-                     # collapsed = TRUE,
+                     collapsed = TRUE,
                      fluidRow(
                        column(12, h4(icon("circle"), "Analyte Panel Querry data version Complete Biomarker List_20201201")),
                        column(12, h4("Select Panel to view Analytes/Common Analytes"))),
                      analyte_panel_querry_UI(id = "id_1")
+)
+
+#p0 analyte_network
+analyte_network_query_box <- box(title = "Panel-Analyte Network Query",
+                                status = "info", solidHeader = TRUE, width = 12,
+                                collapsible = TRUE,
+                                # collapsed = TRUE,
+                                fluidRow(
+                                  column(12, h4("Select Panel, analytes to view Analytes network")),
+                                  column(12, "CytokineLink: A Cytokine Communication Map to Analyse Immune Responses-Case Studies in 
+                                         Inflammatory Bowel Disease and COVID-19. Cells. 2021 Aug 29;10(9):2242. doi: 10.3390/cells10092242. PMID: 34571891")),
+                                analyte_network_UI(id = "id_1")
 )
 
 # p1.a upload ----
@@ -238,7 +250,8 @@ body <- dashboardBody(
            
            tabItem(tabName = "olink_pub",
                    fluidRow(olink_pub_box),
-                   fluidRow(analyte_panel_querry_box)
+                   fluidRow(analyte_panel_querry_box),
+                   fluidRow(analyte_network_query_box)
            )
            )
 

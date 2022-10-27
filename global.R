@@ -16,6 +16,7 @@ library(ggrepel)
 library(patchwork)
 library(shinybusy)
 library(spsComps)
+library(visNetwork)
 
 
 source("helper.R")
@@ -41,11 +42,15 @@ source("corr_plot.R")
 source("download_cor_report.R")
 source("analyte_panel_querry.R")
 source("user_select_list.R")
+source("analyte_network.R")
+library("RColorBrewer")
 
 load("olink_all_analyte_panel.rda")
+load("analyte_type_db.rda")
 
 panel_query <- unique(olink_all_analyte_panel$Query)%>%
   strsplit(split = ",")%>%
   unlist()%>%
   unique()
 panel_query <- panel_query[panel_query != "NA"]
+cell2cell <- read.csv("CytokineLink_HPA_cell2cell.csv")
