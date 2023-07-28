@@ -51,6 +51,7 @@ read_npx <- function(f, lot = "default", startrow = 8, type = "NPX"){
     data.frame()%>%
     set_colnames(unlist(row_feat[, 1]))%>%
     set_rownames(.$Assay)
+  rowData[ ,grepl("Plate LOD", colnames(rowData))] <- NULL
   colnames(rowData)[grep("LOD", colnames(rowData))] <- "LOD"
   rowData$LOD <- as.numeric(rowData$LOD)
   colnames(rowData)[1] <- "Analyt"
