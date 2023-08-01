@@ -77,8 +77,8 @@ pca_plot <- function(input, output, session, values) {
       values$select_observe <- nearPoints(values$pca_fit$plot_df, input$plot_click, maxpoints = 1, threshold = 20,
                                              xvar = "pc_1", yvar = "pc_2")%>%
         select(sample_id, Plate.ID, QC.Warning, 
-               QC.Deviation.from.median.Inc.Ctrl, 
-               QC.Deviation.from.median.Det.Ctrl,
+               QC.Deviation.from.median, 
+               QC.Deviation.from.median.1,
                pc_1, pc_2)
       
       values$select_observe_data <- data.frame(
@@ -142,7 +142,7 @@ pca_plot <- function(input, output, session, values) {
     req(values$combined_meta)
     p <- values$combined_meta%>%
       filter(!grepl("(^NC|IPC|Randox)", ignore.case = T, sample_id))%>%
-      ggplot(aes(QC.Deviation.from.median.Inc.Ctrl, QC.Deviation.from.median.Det.Ctrl))+
+      ggplot(aes(QC.Deviation.from.median, QC.Deviation.from.median.1))+
       geom_point(aes(shape = QC.Warning), shape = 21, size = 4)+
       scale_shape_manual(values = c(21, 16))+
       theme_bw(base_size = 15)+

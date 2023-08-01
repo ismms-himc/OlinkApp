@@ -1,28 +1,18 @@
 read_npx <- function(f, lot = "default", startrow = 8, type = "NPX"){
   
-  f_id <- paste("c", f)
-  f_id <- substr(f_id, (nchar(f_id)-10), nchar(f_id))
-  
-  tryCatch(
-    {
-      if(type != "NPX"){
-        if(grepl("xlsx", f)){
-          npx <- readxl::read_xlsx(f, sheet = 1, col_names = F)
-        }else{
-          npx <- read.csv(f, header = F)
-        }
-        n_col <- length(npx[which(npx[, 1] == "LLOQ"), ])
-        npx[npx == ""] <- NA
-      }
-      else{
-        npx <- readxl::read_xlsx(f, sheet = 1, col_names = F)
-        n_col <- length(npx[which(npx[, 1] == "LOD"), ])
-      }
-    },
-    error = function(e){
-      stop("Unable to upload wrong type of files, or the file was corrupted!")
+  if(type != "NPX"){
+    if(grepl("xlsx", f)){
+      npx <- readxl::read_xlsx(f, sheet = 1, col_names = F)
+    }else{
+      npx <- read.csv(f, header = F)
     }
-  )
+    n_col <- length(npx[which(npx[, 1] == "Assay warning"), ])
+    npx[npx == ""] <- NA
+  }
+  else{
+    npx <- readxl::read_xlsx(f, sheet = 1, col_names = F)
+    n_col <- length(npx[which(npx[, 1] == "LOD"), ])
+  }
   
   
   npx <- npx[, 1:n_col]
@@ -45,24 +35,22 @@ read_npx <- function(f, lot = "default", startrow = 8, type = "NPX"){
   npx_ctrl <- npx_ctrl[1 : nrow(npx), ]
   
   colnames(npx) <- row_feat[1, ]
-  unique_id <- paste(f_id, 1:nrow(npx), sep = "_")
+  unique_id <- paste("idx", 1:nrow(npx), sep = "_")
   
   rowData <- t(row_feat[, -1])%>%
     data.frame()%>%
     set_colnames(unlist(row_feat[, 1]))%>%
     set_rownames(.$Assay)
-  rowData[ ,grepl("Plate LOD", colnames(rowData))] <- NULL
-  colnames(rowData)[grep("LOD", colnames(rowData))] <- "LOD"
+  lod_idx <- grep("LOD", colnames(rowData))
+  rowData <- cbind(rowData[ ,-grep("LOD", colnames(rowData))],
+                   LOD  = rowData[ ,lod_idx[length(lod_idx)]])
   rowData$LOD <- as.numeric(rowData$LOD)
-  colnames(rowData)[1] <- "Analyt"
   
-  colData <- cbind(unique_id, Assay = npx$Assay, file_name = toString(f), npx_ctrl)%>%
+  colData <- cbind(unique_id, Assay = npx$Assay, f_name = toString(f), npx_ctrl)%>%
     setNames(make.names(names(.), unique = TRUE))%>%
     dplyr::mutate_at(.vars = dplyr::vars(dplyr::matches("Ctrl")), .funs = as.numeric)%>%
     dplyr::mutate_at(.vars = dplyr::vars(dplyr::matches("QC.Deviation")), .funs = as.numeric)%>%
     data.frame(row.names = unique_id)
-  colnames(colData)[which(colnames(colData) == "QC.Deviation.from.median")] <- "QC.Deviation.from.median.Inc.Ctrl"
-  colnames(colData)[which(colnames(colData) == "QC.Deviation.from.median.1")] <- "QC.Deviation.from.median.Det.Ctrl"
   
   if(type != "NPX"){
     npx <- cbind(unique_id, npx)%>%
@@ -88,7 +76,6 @@ read_npx <- function(f, lot = "default", startrow = 8, type = "NPX"){
   
   return(re)
 }
-
 
 pull_bdg <- function(f_list, pattern = "hd", fields = "Assay"){
   lapply(f_list, function(x){

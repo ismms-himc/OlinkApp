@@ -12,6 +12,7 @@ creat_data_obj <- function(input, output, session, values) {
   observeEvent(input$creat_data_obj, {
     if(length(values$upload_data) == 1){
       values$combined_data <- values$upload_data[[1]]
+      names(values$combined_data@elementMetadata)[1] <- "Analyt"
     }
     else if(!is.null(values$normed_data)){
       values$combined_data <- cmb_npx_se(values$normed_data) #?? clean
