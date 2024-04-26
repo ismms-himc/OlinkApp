@@ -1,4 +1,6 @@
-library(shiny)
+#library(shiny)
+#library(BiocManager)
+#options(repos = BiocManager::repositories())
 library(shinydashboard)
 library(shinyWidgets)
 library(data.table)
@@ -17,7 +19,8 @@ library(patchwork)
 library(shinybusy)
 library(spsComps)
 library(visNetwork)
-
+library(igraph)
+library(DT)
 
 source("helper.R")
 source("reset_dataset.R")

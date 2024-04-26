@@ -94,9 +94,6 @@ p_range <- ggplot(params$rp_range_summary)+
 if(is.null(params$rp_batch_plot_pca) | (length(params$rp_batch_plot_pca) == 0)){
   select_observe <- params$rp_pca_fit$plot_df%>%
     filter(!is.na(sample_with_na))
-}else if(params$rp_batch_plot_pca == ""){
-  select_observe <- params$rp_pca_fit$plot_df%>%
-    filter(!is.na(sample_with_na))
 }else{
   select_observe <- params$rp_pca_fit$plot_df%>%
     filter(sample_id %in% params$rp_batch_plot_pca)

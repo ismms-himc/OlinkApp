@@ -66,7 +66,7 @@ pca_plot <- function(input, output, session, values) {
       temp
     })
     set.seed(1234)
-    values$pca_fit <- prcomp(t(mat))
+    values$pca_fit <- prcomp(scale(t(mat)))
     values$pca_fit$plot_df <- data.frame(values$combined_meta,
                                          pc_1 = values$pca_fit$x[ ,1],
                                          pc_2 = values$pca_fit$x[ ,2])

@@ -5,10 +5,7 @@ account: jiq4001
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5243361
-bundleId: 6392876
+bundleId: 7921468
 url: https://jiq4001.shinyapps.io/OlinkApp/
-when: 1665517859.68993
-lastSyncTime: 1665517859.68994
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: analyte_type_db.rda|CytokineLink_HPA_cell2cell.csv|CytokineLink_HPA_cytokine2cytokine.tsv

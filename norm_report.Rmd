@@ -118,6 +118,6 @@ temp %>%
 
 ```{r, echo=F, out.width= "100%", message=F, warning=F, fig.height = 15}
 #ref_sample <- strsplit(params$rp_bridging_str, split = ",")%>%unlist()
-plot_npx_norm_qc(params$rp_combined_data, bridge_pattern = idf)$all
+#plot_npx_norm_qc(params$rp_combined_data, bridge_pattern = idf)$all
 ```
 

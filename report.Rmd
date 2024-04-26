@@ -118,7 +118,7 @@ if(sum(grepl("lot", ignore.case = T, colnames(params$rp_combined_meta))) > 0){
 ```{r, echo=F, out.width= "100%", message=F, warning=F}
 mat <- impute::impute.knn(t(params$rp_combined_data@assays@data$npx))$data
 
-fit <- prcomp(mat)
+fit <- prcomp(scale(mat))
 
 if(length(unique(params$rp_combined_meta$ref_sample)) > 1){
   idf <- paste(strsplit(params$rp_bridging_str, split = ",")%>%unlist(), collapse = "|")
