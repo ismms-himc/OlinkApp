@@ -24,7 +24,7 @@ show_file_level_meta <- function(input, output, session, values) {
                    sapply(rownames(x), function(y){
                      temp <- x@assays@data$npx  
                      temp[is.na(temp)] <- -99 
-                     ((sum(temp[rownames(x) == y, ] <  x@elementMetadata$LOD[rownames(x) == y]) / ncol(x)) < 0.25) 
+                     ((sum(temp[rownames(x) == y, ] >  x@elementMetadata$LOD[rownames(x) == y]) / (ncol(x) - sum(grepl("^NC$|^IPC$", x$Assay)))) >= 0.75) 
                      #((sum(temp[rownames(x) == y, ] <  2.5) / 92) < 0.25) 
                      })%>%sum()
                  }) %>% unlist(),
