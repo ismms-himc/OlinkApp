@@ -1,3 +1,128 @@
+read_npx_v2 <- function(file_name, type = "NPX"){
+  
+  if(grepl("xlsx$", file_name)){
+    npx <- readxl::read_xlsx(file_name, sheet = 1, col_names = F, .name_repair = "unique_quiet")
+  }else if(grepl("csv$", file_name)){
+    npx <- read.delim(file_name, header = F, sep = ",")
+  }else{
+    stop("input a valid raw olink data!")
+  }
+  
+  #long/short format check
+  sector_gap <- which(is.na(npx[ , 1]))
+  
+  if(length(sector_gap) != 0){ #short format
+    olink_version <- as.character(unlist(npx[1, 2]))
+    
+    row_df <- npx[c(3:6, (sector_gap[2]+1):nrow(npx)), ]%>%
+      as.matrix()
+    
+    npx <- npx[8 : (sector_gap[2]-1), ]%>%
+      as.matrix()
+    
+    col_df <- data.frame(SampleID = as.character(unlist(npx[ ,1])))
+    
+    col_df <- col_df%>%
+      cbind(npx[ ,98:101])%>%
+      data.frame()%>%
+      set_colnames(value = c("SampleID", "PlateID", "QC_Warning", "QC Deviation Inc Ctrl", "QC Deviation Det Ctrl"))%>%
+      mutate("Olink NPX Signature Version" = olink_version,
+             "Index" = row_number())
+    
+    npx <- apply(npx[ , 2:97], 2, function(x) suppressWarnings(as.numeric(x)))
+    colnames(npx) <- row_df[2, 2:97]
+    
+    row_df[1:2 ,98] <- NA
+    row_df[ ,1] <- ifelse(is.na(row_df[ ,98]), row_df[ ,1], row_df[ ,98])
+    row_df <- t(row_df[, 2:97])%>%
+      data.frame()%>%
+      set_colnames(value = row_df[, 1])%>%
+      mutate(Panel_Version = gsub("(.*\\(|\\))", "", Panel),
+             Panel = gsub("\\(.*\\)", "", Panel))%>%
+      dplyr::rename("UniProt" = "Uniprot ID",
+                    "MissingFreq" = "Missing Data freq.")%>%
+      gather(-Panel, -Assay, -UniProt, -OlinkID, -Panel_Version, -MaxLOD, -MissingFreq, -Normalization, key = "PlateID", value = "PlateLOD")
+    
+    cmb <- col_df%>%
+      cbind(npx)%>%
+      gather(-SampleID, -PlateID, -QC_Warning, -Index, -"QC Deviation Inc Ctrl", -"QC Deviation Det Ctrl", -"Olink NPX Signature Version",
+             key = "Assay", value = "NPX")%>%
+      left_join(row_df)
+    
+    col_order <- c('SampleID', "Index", 'OlinkID','UniProt','Assay','MissingFreq',
+                   'Panel','Panel_Version','PlateID','QC_Warning','MaxLOD','PlateLOD',
+                   'NPX','Normalization','QC Deviation Inc Ctrl','QC Deviation Det Ctrl',
+                   'Olink NPX Signature Version')
+    cmb <- cmb[ , match(col_order, colnames(cmb))]
+    
+  }else{#long format
+    cmb <- npx[-1, ]%>%
+      data.frame()%>%
+      set_colnames(value = npx[1, ])
+  }
+  cmb <- cmb %>%
+    mutate(NPX = as.numeric(NPX),
+           MaxLOD = as.numeric(MaxLOD),
+           PlateLOD = as.numeric(PlateLOD),
+           `QC Deviation Inc Ctrl` = as.numeric(`QC Deviation Inc Ctrl`),
+           `QC Deviation Det Ctrl` = as.numeric(`QC Deviation Det Ctrl`))
+  
+  return(cmb)
+}
+
+
+npx_long2se <- function(npx_long){
+  colData <- npx_long[ ,colnames(npx_long) %in% c("SampleID", "Index", "Panel", "PlateID", "QC_Warning","QC Deviation Inc Ctrl", "QC Deviation Det Ctrl")]%>%
+    distinct()%>%
+    arrange(PlateID, as.numeric(Index), SampleID)%>%
+    set_rownames(value = NULL)
+  
+  assay_order <- npx_long$Assay[!duplicated(npx_long$Assay)]
+  # "Inc Ctrl 1", "Ext Ctrl" , "Inc Ctrl 2" ,  "Det Ctrl"
+  #assay_order <- assay_order[!(assay_order %in% c("Inc Ctrl 1", "Ext Ctrl" , "Inc Ctrl 2" ,  "Det Ctrl" ))]
+  
+  rowData <- npx_long%>%
+    dplyr::select(Assay, OlinkID, UniProt,MissingFreq, Panel_Version, MaxLOD, Normalization, "Olink NPX Signature Version")%>%
+    distinct()
+  rowData <- rowData[match(assay_order, rowData$Assay), ]
+  
+  lod_df <- npx_long%>%
+    dplyr::select(Assay, PlateID, PlateLOD)%>%
+    distinct()%>%
+    spread(key = "PlateID", value = "PlateLOD")
+  lod_df <- lod_df[match(assay_order, lod_df$Assay), ]%>%
+    dplyr::select(-Assay)
+  
+  colnames(lod_df) <- ifelse(ncol(lod_df) == 1, "PlateLOD", paste0("LOD_", colnames(lod_df)))
+  
+  rowData <- cbind(rowData, lod_df)%>%
+    set_rownames(value = NULL)
+  
+  npx <- npx_long%>%
+    dplyr::filter(Assay %in% assay_order)%>%
+    dplyr::select(SampleID, Index, PlateID, Assay, NPX)%>%
+    spread(key = "Assay", value = "NPX")%>%
+    arrange(PlateID, as.numeric(Index), SampleID)
+  npx <- npx[ ,c("SampleID", "Index", "PlateID", assay_order)]
+  
+  re <- SummarizedExperiment(colData = colData,
+                             rowData = rowData,
+                             assays = list(npx = t(npx[ ,-c(1:3)])),
+                             metadata = list("software_version" = rowData$`Olink NPX Signature Version`[1],
+                                             "panel" = colData$Panel[1]))
+  
+  
+  re<- re[!(rownames(re) %in% c("Inc Ctrl 1", "Inc Ctrl 2", "Det Ctrl", "Ext Ctrl")), ]
+  
+  re$Plate.ID <- re$PlateID
+  re$Assay <- re$SampleID
+  re$QC.Warning <- re$QC_Warning
+  re$QC.Deviation.from.median <- re$`QC Deviation Inc Ctrl`
+  re$QC.Deviation.from.median.1 <- re$`QC Deviation Det Ctrl`
+  re@elementMetadata$LOD <- re@elementMetadata$PlateLOD
+  return(re)
+}
+
 read_npx <- function(f, lot = "default", startrow = 8, type = "NPX"){
   
   if(type != "NPX"){

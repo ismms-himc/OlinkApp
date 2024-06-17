@@ -23,17 +23,20 @@ input_file_upload <- function(input, output, session, values) {
     
     if(input$data_type == "NPX"){
       for(x in input$raw_file$name){
-        temp_ls[[x]] <- shinyCatch(read_npx(input$raw_file$datapath[input$raw_file$name == x], startrow = 8), 
+        #temp_ls[[x]] <- shinyCatch(read_npx(input$raw_file$datapath[input$raw_file$name == x], startrow = 8), 
+        #                           blocking_level = "error")
+        temp_ls[[x]] <- shinyCatch(read_npx_v2(input$raw_file$datapath[input$raw_file$name == x]) %>% npx_long2se(), 
                                    blocking_level = "error")
         temp_ls[[x]][["file_name"]] <- x
-        colnames(temp_ls[[x]]) <- temp_ls[[x]]$Assay
+        #colnames(temp_ls[[x]]) <- temp_ls[[x]]$Assay
+        colnames(temp_ls[[x]]) <- temp_ls[[x]]$SampleID
       }
     } else{
-      for(x in input$raw_file$name){
-        temp_ls[[x]] <- shinyCatch(read_npx(input$raw_file$datapath[input$raw_file$name == x], startrow = 9),
+      for(x in input$raw_file$name){ # not tested yet
+        temp_ls[[x]] <- shinyCatch(read_npx_v2(input$raw_file$datapath[input$raw_file$name == x]) %>% npx_long2se(),
                                    blocking_level = "error")
         temp_ls[[x]][["file_name"]] <- x
-        colnames(temp_ls[[x]]) <- temp_ls[[x]]$Assay
+        colnames(temp_ls[[x]]) <- temp_ls[[x]]$SampleID
       }
     }
     

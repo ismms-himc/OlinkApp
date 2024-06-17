@@ -22,7 +22,7 @@ creat_data_obj <- function(input, output, session, values) {
     values$combined_meta <- data.frame(values$combined_data@colData)
     #colnames(values$combined_meta)[1] <- "sample_id"
     values$combined_meta$unique_id <- NULL
-    colnames(values$combined_meta)[which(colnames(values$combined_meta) == "Assay")] <- "sample_id"
+    colnames(values$combined_meta)[which(colnames(values$combined_meta) == "SampleID")] <- "sample_id"
     
     values$range_summary <- data.frame(Plate.ID = values$combined_meta$Plate.ID, 
                                        t(values$combined_data@assays@data$npx))%>%
